@@ -264,10 +264,10 @@ if not SKIP_CUDA_BUILD and not IS_ROCM:
                 "csrc/flash_attn/src/flash_fwd_split_hdim256_bf16_causal_sm80.cu",
             ],
             extra_compile_args={
-                "cxx": ["-O0", "-std=c++17"],
+                "cxx": ["-O2", "-g", "-std=c++17"],
                 "nvcc": append_nvcc_threads(
                     [
-                        "-O0",
+                        "-O2", "-g", "-G",
                         "-std=c++17",
                         "-U__CUDA_NO_HALF_OPERATORS__",
                         "-U__CUDA_NO_HALF_CONVERSIONS__",
