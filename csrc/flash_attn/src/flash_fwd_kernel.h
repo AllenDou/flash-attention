@@ -511,6 +511,9 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
     constexpr int kBlockN = Kernel_traits::kBlockN;
     constexpr int kHeadDim = Kernel_traits::kHeadDim;
     constexpr int kNWarps = Kernel_traits::kNWarps;
+    if (threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0 && threadIdx.x==0) {
+        printf("kBlockM = %d, kBlockN = %d, kHeadDim = %d, kNWarps = %d\n", kBlockM, kBlockN, kHeadDim, kNWarps);
+    }
 
     using GmemTiledCopyO = std::conditional_t<
         !Split,
