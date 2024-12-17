@@ -223,13 +223,13 @@ if not SKIP_CUDA_BUILD and not IS_ROCM:
             name="flash_attn_2_cuda",
             sources=sources,
             extra_compile_args={
-                "cxx": ["-std=c++17", "-g",
+                "cxx": ["-std=c++17",
                         HEADDIM_FLAG,
                         DTYPE_FLAG,
                         ],
                 "nvcc": append_nvcc_threads(
                     [
-                        "-g", "-G",
+                        "-g",
                         HEADDIM_FLAG,
                         DTYPE_FLAG,
                         "-DDTYPE_FP16",
