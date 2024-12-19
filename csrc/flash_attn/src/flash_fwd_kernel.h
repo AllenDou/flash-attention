@@ -498,6 +498,27 @@ inline __device__ void compute_attn_1rowblock(const Params &params, const int bi
 template<typename Kernel_traits, bool Is_causal, bool Is_local, bool Has_alibi, bool Is_even_MN, bool Is_even_K, bool Is_softcap, bool Split, bool Append_KV, typename Params>
 inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, const int bidb, const int bidh, const int m_block, const int n_split_idx, const int num_n_splits) {
 
+    /*
+    (cuda-gdb) p *(@generic Flash_fwd_params*)&params
+    $33 = {__b_10Qkv_params = {q_ptr = 0x7ffe8fe00000, k_ptr = 0x7ffeca600000, v_ptr = 0x7ffecaba0000, 
+        q_batch_stride = 768, k_batch_stride = 196608, v_batch_stride = 196608, q_row_stride = 768, 
+        k_row_stride = 768, v_row_stride = 768, q_head_stride = 64, k_head_stride = 64, v_head_stride = 64, 
+        h = 12, h_k = 12, h_h_k_ratio = 1}, o_ptr = 0x7ffe8ffea600, oaccum_ptr = 0x0, o_batch_stride = 768, 
+      o_row_stride = 768, o_head_stride = 64, p_ptr = 0x0, softmax_lse_ptr = 0x7ffe8fe02600, 
+      softmax_lseaccum_ptr = 0x0, b = 5, seqlen_q = 1, seqlen_k = 768, seqlen_knew = 0, d = 64, 
+      seqlen_q_rounded = 128, seqlen_k_rounded = 768, d_rounded = 64, rotary_dim = 0, total_q = 0, 
+      scale_softmax = 0.125, scale_softmax_log2 = 0.180336878, cu_seqlens_q = 0x0, cu_seqlens_k = 0x7ffe8fe02000, 
+      leftpad_k = 0x0, seqused_k = 0x0, blockmask = 0x0, knew_ptr = 0x0, vnew_ptr = 0x0, knew_batch_stride = 0, 
+      vnew_batch_stride = 0, knew_row_stride = 0, vnew_row_stride = 0, knew_head_stride = 0, 
+      vnew_head_stride = 0, rotary_cos_ptr = 0x0, rotary_sin_ptr = 0x0, cache_batch_idx = 0x0, 
+      block_table = 0x7ffe8fe01e00, block_table_batch_stride = 3, page_block_size = 256, p_dropout = 1, 
+      p_dropout_in_uint8_t = 255 '\377', rp_dropout = 1, scale_softmax_rp_dropout = 0.125, 
+      window_size_left = 768, window_size_right = 0, softcap = 0, philox_args = {seed_ = {val = 0, ptr = 0x0}, 
+        offset_ = {val = 0, ptr = 0x0}, offset_intragraph_ = 0, captured_ = false}, rng_state = 0x0, 
+      is_bf16 = false, is_causal = true, is_seqlens_k_cumulative = false, is_rotary_interleaved = false, 
+      num_splits = 1, alibi_slopes_ptr = 0x7ffe8fe02c00, alibi_slopes_batch_stride = 12, unpadded_lse = false, 
+      seqlenq_ngroups_swapped = false}*/
+
     using Element = typename Kernel_traits::Element;
     using ElementAccum = typename Kernel_traits::ElementAccum;
     using index_t = typename Kernel_traits::index_t;
@@ -595,7 +616,7 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
           + (n_block_max - 1) * kBlockN * params.v_row_stride + (bidh / params.h_h_k_ratio) * params.v_head_stride
         : block_table[block_table_idx] * params.v_batch_stride + block_table_offset * params.v_row_stride + (bidh / params.h_h_k_ratio) * params.v_head_stride;
 
-#if 0
+#if 1
     Tensor mQ = make_tensor(make_gmem_ptr(reinterpret_cast<Element*>(params.q_ptr) + binfo.q_offset(params.q_batch_stride, params.q_row_stride, bidb)),
                             make_shape(binfo.actual_seqlen_q, params.h, params.d),
                             make_stride(params.q_row_stride, params.q_head_stride, _1{}));
