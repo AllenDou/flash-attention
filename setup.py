@@ -235,7 +235,7 @@ if not SKIP_CUDA_BUILD and not IS_ROCM:
                     [
                         "-O0",
                         "-g",
-                        #"-G",
+                        "-G",
                         HEADDIM_FLAG,
                         DTYPE_FLAG,
                         "-DDTYPE_FP16",
