@@ -26,6 +26,24 @@
     }                                           \
   }()
 
+#define BOOL_SWITCH_TRUE(COND, CONST_NAME, ...) \
+  [&] {                                         \
+    if (false) {                                \
+    } else if (COND) {                          \
+      constexpr static bool CONST_NAME = true;  \
+      return __VA_ARGS__();                     \
+    }                                           \
+  }()
+
+#define BOOL_SWITCH_FALSE(COND, CONST_NAME, ...)\
+  [&] {                                         \
+    if (false) {                                \
+    } else {                                    \
+      constexpr static bool CONST_NAME = false; \
+      return __VA_ARGS__();                     \
+    }                                           \
+  }()
+
 #define BOOL_SWITCH2(COND, CONST_NAME, ...)      \
   [&] {                                         \
     if (COND) {                                 \
@@ -53,6 +71,9 @@
 #else
   #define ALIBI_SWITCH BOOL_SWITCH
 #endif
+  
+#define ALIBI_SWITCH_TRUE BOOL_SWITCH_TRUE
+#define ALIBI_SWITCH_FALSE BOOL_SWITCH_FALSE
 
 #ifdef FLASHATTENTION_DISABLE_UNEVEN_K
   #define EVENK_SWITCH(COND, CONST_NAME, ...)   \
@@ -64,6 +85,9 @@
   #define EVENK_SWITCH BOOL_SWITCH
 #endif
 
+#define EVENK_SWITCH_TRUE BOOL_SWITCH_TRUE
+#define EVENK_SWITCH_FALSE BOOL_SWITCH_FALSE
+
 #ifdef FLASHATTENTION_DISABLE_SOFTCAP
   #define SOFTCAP_SWITCH(COND, CONST_NAME, ...)   \
   [&] {                                         \
@@ -73,6 +97,9 @@
 #else
   #define SOFTCAP_SWITCH BOOL_SWITCH
 #endif
+  
+#define SOFTCAP_SWITCH_TRUE BOOL_SWITCH_TRUE
+#define SOFTCAP_SWITCH_FALSE BOOL_SWITCH_FALSE
 
 #ifdef FLASHATTENTION_DISABLE_LOCAL
   #define LOCAL_SWITCH(COND, CONST_NAME, ...)   \
@@ -83,6 +110,9 @@
 #else
   #define LOCAL_SWITCH BOOL_SWITCH
 #endif
+  
+#define LOCAL_SWITCH_TRUE BOOL_SWITCH_TRUE
+#define LOCAL_SWITCH_FALSE BOOL_SWITCH_FALSE
 
 
 #define DTYPE(COND, cond, dtype, ...) \
