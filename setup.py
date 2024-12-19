@@ -248,7 +248,7 @@ if not SKIP_CUDA_BUILD and not IS_ROCM:
                         "--expt-extended-lambda",
                         "--use_fast_math",
                         # "--ptxas-options=-v",
-                        # "--ptxas-options=-O2",
+                        "--ptxas-options=-O0",
                         # "-lineinfo",
                         # "-DFLASHATTENTION_DISABLE_BACKWARD",
                         # "-DFLASHATTENTION_DISABLE_DROPOUT",

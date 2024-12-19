@@ -1923,9 +1923,9 @@ def test_flash_attn_kvcache(
     device = "cuda"
     # set seed
     torch.random.manual_seed(0)
-    batch_size = 2
+    batch_size = 5
     batch_size_cache = batch_size if not has_batch_idx else batch_size * 2
-    nheads = 6
+    nheads = 12
     # rotary_dim must be a multiple of 16, and must be <= d
     rotary_dim = math.floor(int(rotary_fraction * d) / 16) * 16
     nheads_k = nheads if mha_type == "mha" else (1 if mha_type == "mqa" else 3)
