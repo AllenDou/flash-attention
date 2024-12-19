@@ -26,6 +26,14 @@
     }                                           \
   }()
 
+#define BOOL_SWITCH2(COND, CONST_NAME, ...)      \
+  [&] {                                         \
+    if (COND) {                                 \
+      constexpr static bool CONST_NAME = true;  \
+      return __VA_ARGS__();                     \
+    }                                           \
+  }()
+
 #ifdef FLASHATTENTION_DISABLE_DROPOUT
   #define DROPOUT_SWITCH(COND, CONST_NAME, ...) \
   [&] {                                         \

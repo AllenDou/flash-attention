@@ -65,10 +65,12 @@ FORCE_CXX11_ABI = os.getenv("FLASH_ATTENTION_FORCE_CXX11_ABI", "FALSE") == "TRUE
 USE_TRITON_ROCM = os.getenv("FLASH_ATTENTION_TRITON_AMD_ENABLE", "FALSE") == "TRUE"
 ENABLE_SM90 = os.getenv("ENABLE_SM90", "TRUE") == "TRUE"
 
-METHOD = ['fwd', 'fwd_split', 'bwd']
+#METHOD = ['fwd', 'fwd_split', 'bwd']
+METHOD = ['fwd_split']
 HEADDIM = [32, 64, 96, 128, 160, 192, 256]
 DTYPE = ['bf16', 'fp16']
-CAUSAL = [True, False]
+#CAUSAL = [True, False]
+CAUSAL = [True]
 
 HEADDIM_FLAG="-DHEADDIM_ALL"
 DTYPE_FLAG="-DDTYPE_ALL"
@@ -223,13 +225,17 @@ if not SKIP_CUDA_BUILD and not IS_ROCM:
             name="flash_attn_2_cuda",
             sources=sources,
             extra_compile_args={
-                "cxx": ["-O3", "-std=c++17",
+                "cxx": ["-std=c++17",
+                        "-g",
+                        "-O0",
                         HEADDIM_FLAG,
                         DTYPE_FLAG,
                         ],
                 "nvcc": append_nvcc_threads(
                     [
-                        "-O3",
+                        "-O0",
+                        "-g",
+                        #"-G", 
                         HEADDIM_FLAG,
                         DTYPE_FLAG,
                         "-DDTYPE_FP16",
