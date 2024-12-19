@@ -305,7 +305,6 @@ def test_flash_attn_kvcache(
         ) = _generate_block_kvcache(
             seqlen_k, paged_kv_block_size, batch_size, nheads_k, d, device, dtype
         )
-        import pdb; pdb.set_trace()
     cache_seqlens = torch.randint(
         0 if new_kv else 1,
         # If we don't use seqlen_q in the case of causal and rotary, cos/sin won't be long enough
