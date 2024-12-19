@@ -26,6 +26,7 @@
 template<typename Kernel_traits, __VA_ARGS__> \
 __global__ void kernelName(KERNEL_PARAM_MODIFIER const Flash_fwd_params params)
 
+#if 0
 DEFINE_FLASH_FORWARD_KERNEL(flash_fwd_kernel, bool Is_dropout, bool Is_causal, bool Is_local, bool Has_alibi, bool Is_even_MN, bool Is_even_K, bool Is_softcap, bool Return_softmax) {
     #if defined(ARCH_SUPPORTS_FLASH)
         static_assert(!(Is_causal && Is_local)); // Enforce constraints
@@ -34,6 +35,7 @@ DEFINE_FLASH_FORWARD_KERNEL(flash_fwd_kernel, bool Is_dropout, bool Is_causal, b
         FLASH_UNSUPPORTED_ARCH
     #endif
 }
+#endif
 
 DEFINE_FLASH_FORWARD_KERNEL(flash_fwd_splitkv_kernel, bool Is_causal, bool Is_local, bool Has_alibi, bool Is_even_MN, bool Is_even_K, bool Is_softcap, bool Split, bool Append_KV) {
     #if defined(ARCH_SUPPORTS_FLASH)
@@ -43,11 +45,14 @@ DEFINE_FLASH_FORWARD_KERNEL(flash_fwd_splitkv_kernel, bool Is_causal, bool Is_lo
     #endif
 }
 
+#if 0
 DEFINE_FLASH_FORWARD_KERNEL(flash_fwd_splitkv_combine_kernel, int kBlockM, int Log_max_splits, bool Is_even_K) {
     static_assert(Log_max_splits >= 1);
     flash::combine_attn_seqk_parallel<Kernel_traits, kBlockM, Log_max_splits, Is_even_K>(params);
 }
+#endif
 
+#if 0
 template<typename Kernel_traits, bool Is_dropout, bool Is_causal>
 void run_flash_fwd(Flash_fwd_params &params, cudaStream_t stream) {
     constexpr size_t smem_size = Kernel_traits::kSmemSize;
@@ -94,6 +99,7 @@ void run_flash_fwd(Flash_fwd_params &params, cudaStream_t stream) {
         });
     });
 }
+#endif
 
 template<typename Kernel_traits, bool Is_causal>
 void run_flash_splitkv_fwd(Flash_fwd_params &params, cudaStream_t stream) {
@@ -130,6 +136,7 @@ void run_flash_splitkv_fwd(Flash_fwd_params &params, cudaStream_t stream) {
             });
         });
     });
+#if 0
     if (params.num_splits > 1) {
         // We want kBlockM to be as small as possible for more parallelism.
         // With 128 threads we can load 512 elements at a time, so if headdim is divisible by 128, kBlockM = 4.
@@ -155,6 +162,7 @@ void run_flash_splitkv_fwd(Flash_fwd_params &params, cudaStream_t stream) {
             C10_CUDA_KERNEL_LAUNCH_CHECK();
         });
     }
+#endif
 }
 
 template<typename T, int Headdim, bool Is_causal>
@@ -167,6 +175,8 @@ void run_mha_fwd_splitkv_dispatch(Flash_fwd_params &params, cudaStream_t stream)
     run_flash_splitkv_fwd<Flash_fwd_kernel_traits<Headdim, kBlockM, kBlockN, 4, false, false, T>, Is_causal>(params, stream);
 }
 
+
+#if 0
 template<typename T, bool Is_causal>
 void run_mha_fwd_hdim32(Flash_fwd_params &params, cudaStream_t stream) {
     constexpr static int Headdim = 32;
@@ -174,7 +184,9 @@ void run_mha_fwd_hdim32(Flash_fwd_params &params, cudaStream_t stream) {
         run_flash_fwd<Flash_fwd_kernel_traits<Headdim, 128, 128, 4, false, false, T>, Is_dropout, Is_causal>(params, stream);
     });
 }
+#endif
 
+#if 0
 template<typename T, bool Is_causal>
 void run_mha_fwd_hdim64(Flash_fwd_params &params, cudaStream_t stream) {
     constexpr static int Headdim = 64;
@@ -194,7 +206,10 @@ void run_mha_fwd_hdim64(Flash_fwd_params &params, cudaStream_t stream) {
         }
     });
 }
+#endif
 
+
+#if 0
 template<typename T, bool Is_causal>
 void run_mha_fwd_hdim96(Flash_fwd_params &params, cudaStream_t stream) {
     constexpr static int Headdim = 96;
@@ -218,7 +233,9 @@ void run_mha_fwd_hdim96(Flash_fwd_params &params, cudaStream_t stream) {
         // run_flash_fwd<Flash_fwd_kernel_traits<96, 64, 128, 4, true, T>>(params, stream);
     });
 }
+#endif
 
+#if 0
 template<typename T, bool Is_causal>
 void run_mha_fwd_hdim128(Flash_fwd_params &params, cudaStream_t stream) {
     constexpr static int Headdim = 128;
@@ -253,6 +270,9 @@ void run_mha_fwd_hdim128(Flash_fwd_params &params, cudaStream_t stream) {
         }
     });
 }
+#endif
+
+#if 0
 
 template<typename T, bool Is_causal>
 void run_mha_fwd_hdim160(Flash_fwd_params &params, cudaStream_t stream) {
@@ -281,6 +301,9 @@ void run_mha_fwd_hdim160(Flash_fwd_params &params, cudaStream_t stream) {
         // run_flash_fwd<Flash_fwd_kernel_traits<Headdim, 128, 128, 8, false, T>>(params, stream);
     });
 }
+#endif
+
+#if 0
 
 template<typename T, bool Is_causal>
 void run_mha_fwd_hdim192(Flash_fwd_params &params, cudaStream_t stream) {
@@ -298,7 +321,9 @@ void run_mha_fwd_hdim192(Flash_fwd_params &params, cudaStream_t stream) {
         // run_flash_fwd<Flash_fwd_kernel_traits<Headdim, 128, 128, 8, false, T>>(params, stream);
     });
 }
+#endif
 
+#if 0
 template<typename T, bool Is_causal>
 void run_mha_fwd_hdim256(Flash_fwd_params &params, cudaStream_t stream) {
     constexpr static int Headdim = 256;
@@ -327,3 +352,4 @@ void run_mha_fwd_hdim256(Flash_fwd_params &params, cudaStream_t stream) {
         // run_flash_fwd<Flash_fwd_kernel_traits<Headdim, 128, 32, 8, false, false, T>, Is_dropout, Is_causal>(params, stream);
     });
 }
+#endif
