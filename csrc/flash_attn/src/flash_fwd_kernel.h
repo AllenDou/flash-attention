@@ -495,8 +495,11 @@ inline __device__ void compute_attn_1rowblock(const Params &params, const int bi
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-template<typename Kernel_traits, bool Is_causal, bool Is_local, bool Has_alibi, bool Is_even_MN, bool Is_even_K, bool Is_softcap, bool Split, bool Append_KV, typename Params>
-inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, const int bidb, const int bidh, const int m_block, const int n_split_idx, const int num_n_splits) {
+template<typename Kernel_traits, bool Is_causal, bool Is_local, bool Has_alibi, bool Is_even_MN, bool Is_even_K, \
+        bool Is_softcap, bool Split, bool Append_KV, typename Params>
+inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, const int bidb, const int bidh, \
+                                                const int m_block, const int n_split_idx, const int num_n_splits) {
+    // const int m_block = blockIdx.x;
 
     /* (cuda-gdb) p *(@generic Flash_fwd_params*)&params
     $33 = {__b_10Qkv_params = {q_ptr = 0x7ffe8fe00000, k_ptr = 0x7ffeca600000, v_ptr = 0x7ffecaba0000, 
@@ -548,13 +551,13 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
     if (m_block * kBlockM/*64*/ >= binfo.actual_seqlen_q) return;
 
     const int n_blocks_per_split /*1*/ = ((params.seqlen_k/*128*/ + kBlockN - 1) / kBlockN + num_n_splits/*1*/ - 1) / num_n_splits;
-    const int n_block_min/*0*/ = !Is_local
+    const int n_block_min/*0*/ = !Is_local // false
         ? n_split_idx * n_blocks_per_split
         : std::max(n_split_idx * n_blocks_per_split, (m_block * kBlockM + binfo.actual_seqlen_k - binfo.actual_seqlen_q - params.window_size_left) / kBlockN);
     int n_block_max/*1*/ = std::min(cute::ceil_div(binfo.actual_seqlen_k, kBlockN), (n_split_idx + 1) * n_blocks_per_split);
-    if (Is_causal || Is_local) {
-        n_block_max = std::min(n_block_max,
-                               cute::ceil_div((m_block + 1) * kBlockM + binfo.actual_seqlen_k - binfo.actual_seqlen_q + params.window_size_right, kBlockN));
+    if (Is_causal /*true*/ || Is_local /*false*/) {
+        n_block_max = std::min(n_block_max, cute::ceil_div((m_block + 1) * kBlockM + binfo.actual_seqlen_k - \
+                                                binfo.actual_seqlen_q + params.window_size_right, kBlockN));
     }
     if (n_block_min >= n_block_max) {  // This also covers the case where n_block_max <= 0
         // We exit early and write 0 to gOaccum and -inf to gLSEaccum.
