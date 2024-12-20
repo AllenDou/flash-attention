@@ -498,8 +498,7 @@ inline __device__ void compute_attn_1rowblock(const Params &params, const int bi
 template<typename Kernel_traits, bool Is_causal, bool Is_local, bool Has_alibi, bool Is_even_MN, bool Is_even_K, bool Is_softcap, bool Split, bool Append_KV, typename Params>
 inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, const int bidb, const int bidh, const int m_block, const int n_split_idx, const int num_n_splits) {
 
-    /*
-    (cuda-gdb) p *(@generic Flash_fwd_params*)&params
+    /* (cuda-gdb) p *(@generic Flash_fwd_params*)&params
     $33 = {__b_10Qkv_params = {q_ptr = 0x7ffe8fe00000, k_ptr = 0x7ffeca600000, v_ptr = 0x7ffecaba0000, 
         q_batch_stride = 768, k_batch_stride = 196608, v_batch_stride = 196608, q_row_stride = 768, 
         k_row_stride = 768, v_row_stride = 768, q_head_stride = 64, k_head_stride = 64, v_head_stride = 64, 
@@ -517,7 +516,7 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
         offset_ = {val = 0, ptr = 0x0}, offset_intragraph_ = 0, captured_ = false}, rng_state = 0x0, 
       is_bf16 = false, is_causal = true, is_seqlens_k_cumulative = false, is_rotary_interleaved = false, 
       num_splits = 1, alibi_slopes_ptr = 0x7ffe8fe02c00, alibi_slopes_batch_stride = 12, unpadded_lse = false, 
-      seqlenq_ngroups_swapped = false}*/
+      seqlenq_ngroups_swapped = false} */
 
     using Element = typename Kernel_traits::Element;
     using ElementAccum = typename Kernel_traits::ElementAccum;
@@ -529,7 +528,7 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
     // The thread index.
     const int tidx = threadIdx.x;
 
-    constexpr int kBlockM = Kernel_traits::kBlockM;   // 64
+    constexpr int kBlockM = Kernel_traits::kBlockM;   // 64   这两个值在 run_mha_fwd_splitkv_dispatch 编译期间固化
     constexpr int kBlockN = Kernel_traits::kBlockN;   // 256
     constexpr int kHeadDim = Kernel_traits::kHeadDim; // 64
     constexpr int kNWarps = Kernel_traits::kNWarps;   // 4
