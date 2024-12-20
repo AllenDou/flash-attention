@@ -639,6 +639,18 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
     Tensor sVt = make_tensor(sV.data(), typename Kernel_traits::SmemLayoutVtransposed{});
     Tensor sVtNoSwizzle = make_tensor(sV.data().get(), typename Kernel_traits::SmemLayoutVtransposedNoSwizzle{});
 
+    if (threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
+        print("\nmQ:"); print(mQ);
+        print("\ngQ:"); print(gQ);
+        print("\ngK:"); print(gK);
+        print("\ngV:"); print(gV);
+        print("\nsQ:"); print(sQ);
+        print("\nsK:"); print(sK);
+        print("\nsV:"); print(sV);
+        print("\nsVt:"); print(sVt);
+        print("\nsVtNoSwizzle:"); print(sVtNoSwizzle);
+        print("\n");
+    }
 #if 0
     typename Kernel_traits::GmemTiledCopyQKV gmem_tiled_copy_QKV;
     auto gmem_thr_copy_QKV = gmem_tiled_copy_QKV.get_thread_slice(tidx);
