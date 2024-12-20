@@ -639,6 +639,7 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
     Tensor sVt = make_tensor(sV.data(), typename Kernel_traits::SmemLayoutVtransposed{});
     Tensor sVtNoSwizzle = make_tensor(sV.data().get(), typename Kernel_traits::SmemLayoutVtransposedNoSwizzle{});
 
+#if 0
     typename Kernel_traits::GmemTiledCopyQKV gmem_tiled_copy_QKV;
     auto gmem_thr_copy_QKV = gmem_tiled_copy_QKV.get_thread_slice(tidx);
 
@@ -692,7 +693,6 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
     Tensor tQpQ = make_tensor<bool>(make_shape(size<2>(tQsQ)));
     Tensor tKVpKV = make_tensor<bool>(make_shape(size<2>(tKsK)));
 
-#if 0
     // Set predicates for k bounds
     if (!Is_even_K) {
         #pragma unroll
