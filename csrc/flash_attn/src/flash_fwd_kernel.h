@@ -555,6 +555,7 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
         ? n_split_idx * n_blocks_per_split
         : std::max(n_split_idx * n_blocks_per_split, (m_block * kBlockM + binfo.actual_seqlen_k - binfo.actual_seqlen_q - params.window_size_left) / kBlockN);
     int n_block_max/*1*/ = std::min(cute::ceil_div(binfo.actual_seqlen_k, kBlockN), (n_split_idx + 1) * n_blocks_per_split);
+    // 如果k v 很长的, 如300, 那么n_block_max = 2, 每256个一个block.
     if (Is_causal /*true*/ || Is_local /*false*/) {
         n_block_max = std::min(n_block_max, cute::ceil_div((m_block + 1) * kBlockM + binfo.actual_seqlen_k - \
                                                 binfo.actual_seqlen_q + params.window_size_right, kBlockN));
