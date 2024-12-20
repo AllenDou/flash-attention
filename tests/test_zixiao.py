@@ -394,6 +394,8 @@ def test_flash_attn_kvcache(
         v_cache_ref[update_mask] = rearrange(v, "b s ... -> (b s) ...")
     k_cache_rep = repeat(k_cache_ref, "b s h d -> b s (h g) d", g=nheads // nheads_k)
     v_cache_rep = repeat(v_cache_ref, "b s h d -> b s (h g) d", g=nheads // nheads_k)
+    #import pdb; pdb.set_trace()
+    print(f"============ {cache_seqlens=}")
     out = flash_attn_with_kvcache(
         q, # [5, 1, 12, 64]
         k_cache if paged_kv_block_size is None else k_cache_paged,
