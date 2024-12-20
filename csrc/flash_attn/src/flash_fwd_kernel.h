@@ -641,18 +641,17 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
     Tensor sVtNoSwizzle = make_tensor(sV.data().get(), typename Kernel_traits::SmemLayoutVtransposedNoSwizzle{});
 
     if (threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
-        print("\nmQ:"); print(mQ);
-        print("\ngQ:"); print(gQ);
-        print("\ngK:"); print(gK);
-        print("\ngV:"); print(gV);
-        print("\nsQ:"); print(sQ);
-        print("\nsK:"); print(sK);
-        print("\nsV:"); print(sV);
-        print("\nsVt:"); print(sVt);
-        print("\nsVtNoSwizzle:"); print(sVtNoSwizzle);
+        print("\nmQ: "); print(mQ);
+        print("\ngQ: "); print(gQ);
+        print("\ngK: "); print(gK);
+        print("\ngV: "); print(gV);
+        print("\nsQ: "); print(sQ);
+        print("\nsK: "); print(sK);
+        print("\nsV: "); print(sV);
+        print("\nsVt: "); print(sVt);
+        print("\nsVtNoSwizzle: "); print(sVtNoSwizzle);
         print("\n");
     }
-#if 0
     typename Kernel_traits::GmemTiledCopyQKV gmem_tiled_copy_QKV;
     auto gmem_thr_copy_QKV = gmem_tiled_copy_QKV.get_thread_slice(tidx);
 
@@ -670,6 +669,23 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
     Tensor tOrVt  = thr_mma.partition_fragment_B(sVtNoSwizzle);                // (MMA, MMA_K,MMA_N)
 
     Tensor acc_o = partition_fragment_C(tiled_mma, Shape<Int<kBlockM>, Int<kHeadDim>>{});  // MMA, MMA_M, MMA_K
+
+    if (threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
+        print("\ngmem_thr_copy_QKV: "); print(gmem_thr_copy_QKV);
+        print("\ntQgQ: "); print(tQgQ);
+        print("\ntQsQ: "); print(tQsQ);
+        print("\ntKgK: "); print(tKgK);
+        print("\ntKsK: "); print(tKsK);
+        print("\ntVgV: "); print(tVgV);
+        print("\ntVsV: "); print(tVsV);
+        print("\nthr_mma:"); print(thr_mma);
+        print("\ntSrQ: "); print(tSrQ);
+        print("\ntSrK: "); print(tSrK);
+        print("\n:tOrVt: "); print(tOrVt);
+        print("\n:acc_o: "); print(acc_o);
+        print("\n");
+    }
+#if 0
 
     //
     // Copy Atom retiling
