@@ -744,6 +744,7 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
     if (threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
         print("\n=============");
         print("\nn_masking_steps: "); print(n_masking_steps);
+        print("\n");
     }
     //#pragma unroll
     for (int masking_step = 0; masking_step < n_masking_steps; ++masking_step, --n_block) {
