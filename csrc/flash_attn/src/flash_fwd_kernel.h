@@ -592,6 +592,7 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
                                             binfo.q_offset(params.q_batch_stride, params.q_row_stride, bidb)),
                             make_shape(binfo.actual_seqlen_q, params.h, params.d),
                             make_stride(params.q_row_stride, params.q_head_stride, _1{}));
+    // 这个gQ是一个切出来的tile
     Tensor gQ = local_tile(mQ(_, bidh, _), Shape<Int<kBlockM/*64*/>, Int<kHeadDim/*64*/>>{},
                            make_coord(m_block/*0*/, 0));  // (kBlockM, kHeadDim)
     if (false && threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
@@ -599,6 +600,7 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
         print("\nmQ's content: "); print_tensor(mQ);
         print("\ngQ's content: "); print_tensor(gQ);
     }
+    // gK gV不是切出来的tile, 只是一个指定尺寸的tensor
     Tensor gK = make_tensor(make_gmem_ptr(reinterpret_cast<Element *>(params.k_ptr) + row_offset_k),
                             Shape<Int<kBlockN/*256*/>, Int<kHeadDim>>{},
                             make_stride(params.k_row_stride, _1{}));
@@ -607,6 +609,7 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
                             Shape<Int<kBlockN>, Int<kHeadDim>>{},
                             make_stride(params.v_row_stride, _1{}));
 
+    // shared memory里的 q k v vt(转置的v), 这里只是预留shared memory的空间, 此时还没有存放数据
     Tensor sQ = make_tensor(make_smem_ptr(reinterpret_cast<Element *>(smem_)),
                             typename Kernel_traits::SmemLayoutQ{});
     Tensor sK = make_tensor(sQ.data() + size(sQ), typename Kernel_traits::SmemLayoutKV{});
@@ -626,9 +629,10 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
         print("\nsVtNoSwizzle: "); print(sVtNoSwizzle);
         print("\n");
     }
-    typename Kernel_traits::GmemTiledCopyQKV gmem_tiled_copy_QKV;
+    typename Kernel_traits::GmemTiledCopyQKV gmem_tiled_copy_QKV;  // 这变量用来控制tile的copy
     auto gmem_thr_copy_QKV = gmem_tiled_copy_QKV.get_thread_slice(tidx);
 
+    // 分别是全局内存&shared memory的 q k v, 被partition成线程级别的tensor
     Tensor tQgQ = gmem_thr_copy_QKV.partition_S(gQ);
     Tensor tQsQ = gmem_thr_copy_QKV.partition_D(sQ);
     Tensor tKgK = gmem_thr_copy_QKV.partition_S(gK);  // (KCPY, KCPY_N, KCPY_K)
@@ -636,8 +640,9 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
     Tensor tVgV = gmem_thr_copy_QKV.partition_S(gV);  // (VCPY, VCPY_N, VCPY_K)
     Tensor tVsV = gmem_thr_copy_QKV.partition_D(sV);
 
-    typename Kernel_traits::TiledMma tiled_mma;
+    typename Kernel_traits::TiledMma tiled_mma; // 这个变量用来控制tile的mma
     auto thr_mma = tiled_mma.get_thread_slice(tidx);
+    // 分别是线程级别的 存在寄存器里的要即将做mma的tensor
     Tensor tSrQ  = thr_mma.partition_fragment_A(sQ);                           // (MMA,MMA_M,MMA_K)
     Tensor tSrK  = thr_mma.partition_fragment_B(sK);                           // (MMA,MMA_N,MMA_K)
     Tensor tOrVt  = thr_mma.partition_fragment_B(sVtNoSwizzle);                // (MMA, MMA_K,MMA_N)
@@ -773,6 +778,11 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
         
         }
         cute::cp_async_fence();
+
+        //void gemm(Tensor0 &acc, Tensor1 &tCrA, Tensor2 &tCrB, Tensor3 const& tCsA,
+        //        Tensor4 const& tCsB, TiledMma tiled_mma,
+        //        TiledCopyA smem_tiled_copy_A, TiledCopyB smem_tiled_copy_B,
+        //        ThrCopyA smem_thr_copy_A, ThrCopyB smem_thr_copy_B) {
 
         flash::gemm(
             acc_s, tSrQ, tSrK, tSsQ, tSsK, tiled_mma, smem_tiled_copy_Q, smem_tiled_copy_K,
