@@ -499,6 +499,9 @@ template<typename Kernel_traits, bool Is_causal, bool Is_local, bool Has_alibi, 
         bool Is_softcap, bool Split, bool Append_KV, typename Params>
 inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, const int bidb, const int bidh, \
                                                 const int m_block, const int n_split_idx, const int num_n_splits) {
+    
+    // break flash_fwd_kernel.h:686 if blockIdx.y==3 && blockIdx.z==7
+
     // const int m_block = blockIdx.x;
 
     /* (cuda-gdb) p *(@generic Flash_fwd_params*)&params
@@ -625,6 +628,11 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
                             make_stride(params.q_row_stride, params.q_head_stride, _1{}));
     Tensor gQ = local_tile(mQ(_, bidh, _), Shape<Int<kBlockM/*64*/>, Int<kHeadDim/*64*/>>{},
                            make_coord(m_block/*0*/, 0));  // (kBlockM, kHeadDim)
+    if (false && threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
+        print("\n=====================");
+        print("\nmQ's content: "); print_tensor(mQ);
+        print("\ngQ's content: "); print_tensor(gQ);
+    }
     Tensor gK = make_tensor(make_gmem_ptr(reinterpret_cast<Element *>(params.k_ptr) + row_offset_k),
                             Shape<Int<kBlockN/*256*/>, Int<kHeadDim>>{},
                             make_stride(params.k_row_stride, _1{}));
