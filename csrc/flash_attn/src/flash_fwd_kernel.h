@@ -769,6 +769,7 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
             flash::copy<Is_even_MN, Is_even_K, /*Clear_OOB_MN=*/true>(
                 gmem_tiled_copy_QKV, tVgV, tVsV, tKVcKV, tKVpKV, binfo.actual_seqlen_k - n_block * kBlockN
             );
+        
         }
         cute::cp_async_fence();
 
@@ -966,7 +967,8 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
     );
 
 #endif
-    print("\n");
+    // printf("blockIdx.x=%d blockIdx.y=%d blockIdx.z=%d threadIdx.x=%d threadIdx.y=%d threadIdx.z=%d\n", \
+    // blockIdx.x, blockIdx.y, blockIdx.z, threadIdx.x, threadIdx.y, threadIdx.z);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
