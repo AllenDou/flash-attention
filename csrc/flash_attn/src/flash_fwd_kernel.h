@@ -666,7 +666,7 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
         print("\n");
     }
 
-#if 0
+#if 1
 
     //
     // Copy Atom retiling
@@ -756,6 +756,7 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
     if (threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
         print("\n=============");
         print("\nn_masking_steps: "); print(n_masking_steps);
+        print("\nn_block: "); print(n_block);
         print("\n");
     }
     //#pragma unroll
@@ -791,6 +792,9 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
         //        TiledCopyA smem_tiled_copy_A, TiledCopyB smem_tiled_copy_B,
         //        ThrCopyA smem_thr_copy_A, ThrCopyB smem_thr_copy_B) {
 
+        if (threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
+            print("\ncalling flash::gemm()");
+        }
         flash::gemm(
             acc_s, tSrQ, tSrK, tSsQ, tSsK, tiled_mma, smem_tiled_copy_Q, smem_tiled_copy_K,
             smem_thr_copy_Q, smem_thr_copy_K
@@ -839,6 +843,9 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
         // if using m16n8k16 or (4, MMA_M, MMA_N) if using m16n8k8.
         Tensor tOrP = make_tensor(rP.data(), flash::convert_layout_acc_Aregs<Kernel_traits::TiledMma>(rP.layout()));
 
+        if (threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
+            print("\ncalling flash::gemm_rs()");
+        }
         flash::gemm_rs(acc_o, tOrP, tOrVt, tOsVt, tiled_mma, smem_tiled_copy_V, smem_thr_copy_V);
 
         // This check is at the end of the loop since we always have at least 1 iteration
@@ -848,8 +855,16 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
         }
     }
 
+    if (threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
+        print("\nn_block: "); print(n_block);
+    }
+
+    // n_block = -1, so, no for n_block iteration
     // These are the iterations where we don't need masking on S
     for (; n_block >= n_block_min; --n_block) {
+        if (threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
+            print("\n n_block iteration");
+        }
         Tensor acc_s = partition_fragment_C(tiled_mma, Shape<Int<kBlockM>, Int<kBlockN>>{});  // (MMA=4, MMA_M, MMA_N)
         clear(acc_s);
         flash::cp_async_wait<0>();
@@ -904,6 +919,9 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
         // if using m16n8k16 or (4, MMA_M, MMA_N) if using m16n8k8.
         Tensor tOrP = make_tensor(rP.data(), flash::convert_layout_acc_Aregs<Kernel_traits::TiledMma>(rP.layout()));
 
+        if (threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
+            print("\ncalling flash::gemm_rs()");
+        }
         flash::gemm_rs(acc_o, tOrP, tOrVt, tOsVt, tiled_mma, smem_tiled_copy_V, smem_thr_copy_V);
     }
 
@@ -987,6 +1005,9 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
 #endif
     // printf("blockIdx.x=%d blockIdx.y=%d blockIdx.z=%d threadIdx.x=%d threadIdx.y=%d threadIdx.z=%d\n", \
     // blockIdx.x, blockIdx.y, blockIdx.z, threadIdx.x, threadIdx.y, threadIdx.z);
+    if (threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
+        print("\n");
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
