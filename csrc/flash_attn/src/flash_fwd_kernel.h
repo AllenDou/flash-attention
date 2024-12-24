@@ -808,9 +808,7 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
         // __syncthreads();
 
         // We have key_padding_mask so we'll need to Check_inf
-        masking_step == 0
-            ? softmax.template softmax_rescale_o</*Is_first=*/true,  /*Check_inf=*/Is_causal || Is_local || !Is_even_MN>(acc_s, acc_o, params.scale_softmax_log2)
-            : softmax.template softmax_rescale_o</*Is_first=*/false, /*Check_inf=*/Is_causal || Is_local || !Is_even_MN>(acc_s, acc_o, params.scale_softmax_log2);
+        softmax.template softmax_rescale_o</*Is_first=*/true,  /*Check_inf=*/Is_causal || Is_local || !Is_even_MN>(acc_s, acc_o, params.scale_softmax_log2);
         // if (cute::thread0()) { print(scores_max); print(scores_sum); print(scores); }
 
         // Convert acc_s from fp32 to fp16/bf16
@@ -819,14 +817,11 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
         // if using m16n8k16 or (4, MMA_M, MMA_N) if using m16n8k8.
         Tensor tOrP = make_tensor(rP.data(), flash::convert_layout_acc_Aregs<Kernel_traits::TiledMma>(rP.layout()));
 
-        if (threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
-            print("\ncalling flash::gemm_rs()");
-        }
         // q k 计算的结果和v计算
         flash::gemm_rs(acc_o, tOrP, tOrVt, tOsVt, tiled_mma, smem_tiled_copy_V, smem_thr_copy_V);
 
         // This check is at the end of the loop since we always have at least 1 iteration
-        if (n_masking_steps > 1 && n_block <= n_block_min) {
+        if (n_masking_steps/*2*/ > 1 && n_block/*0*/ <= n_block_min/*0*/) {
             --n_block;
             break;
         }
