@@ -855,76 +855,6 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
         }
     }
 
-    if (threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
-        print("\nn_block: "); print(n_block);
-    }
-
-    // n_block = -1, so, no for n_block iteration
-    // These are the iterations where we don't need masking on S
-    for (; n_block >= n_block_min; --n_block) {
-        if (threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
-            print("\n n_block iteration");
-        }
-        Tensor acc_s = partition_fragment_C(tiled_mma, Shape<Int<kBlockM>, Int<kBlockN>>{});  // (MMA=4, MMA_M, MMA_N)
-        clear(acc_s);
-        flash::cp_async_wait<0>();
-        __syncthreads();
-        // Advance gV
-        if (block_table == nullptr) {
-            tVgV.data() = tVgV.data() + (-int(kBlockN * params.v_row_stride));
-        } else {
-            const int block_table_idx_cur = (n_block + 1) * kBlockN / params.page_block_size;
-            const int block_table_offset_cur = (n_block + 1) * kBlockN - block_table_idx_cur * params.page_block_size;
-            const int block_table_idx_next = n_block * kBlockN / params.page_block_size;
-            const int block_table_offset_next = n_block * kBlockN - block_table_idx_next * params.page_block_size;
-            tVgV.data() = tVgV.data() + (block_table[block_table_idx_next] - block_table[block_table_idx_cur]) * params.v_batch_stride + (block_table_offset_next - block_table_offset_cur) * params.v_row_stride;
-        }
-        flash::copy</*Is_even_MN=*/true, Is_even_K>(gmem_tiled_copy_QKV, tVgV, tVsV, tKVcKV, tKVpKV);
-        cute::cp_async_fence();
-
-        flash::gemm(
-            acc_s, tSrQ, tSrK, tSsQ, tSsK, tiled_mma, smem_tiled_copy_Q, smem_tiled_copy_K,
-            smem_thr_copy_Q, smem_thr_copy_K
-        );
-        if constexpr (Is_softcap){
-            flash::apply_softcap(acc_s, params.softcap);
-        }
-
-        flash::cp_async_wait<0>();
-        __syncthreads();
-        if (n_block > n_block_min) {
-            // Advance gK
-            if (block_table == nullptr) {
-                tKgK.data() = tKgK.data() + (-int(kBlockN * params.k_row_stride));
-            } else {
-                const int block_table_idx_cur = n_block * kBlockN / params.page_block_size;
-                const int block_table_offset_cur = n_block * kBlockN - block_table_idx_cur * params.page_block_size;
-                const int block_table_idx_next = (n_block - 1) * kBlockN / params.page_block_size;
-                const int block_table_offset_next = (n_block - 1) * kBlockN - block_table_idx_next * params.page_block_size;
-                tKgK.data() = tKgK.data() + (block_table[block_table_idx_next] - block_table[block_table_idx_cur]) * params.k_batch_stride + (block_table_offset_next - block_table_offset_cur) * params.k_row_stride;
-            }
-            flash::copy</*Is_even_MN=*/true, Is_even_K>(gmem_tiled_copy_QKV, tKgK, tKsK, tKVcKV, tKVpKV);
-            // This cp_async_fence needs to be in the if block, otherwise the synchronization
-            // isn't right and we get race conditions.
-            cute::cp_async_fence();
-        }
-
-        mask.template apply_mask</*Causal_mask=*/false>(
-            acc_s, n_block * kBlockN, m_block * kBlockM + (tidx / 32) * 16 + (tidx % 32) / 4, kNWarps * 16
-        );
-        softmax.template softmax_rescale_o</*Is_first=*/false, /*Check_inf=*/Is_local>(acc_s, acc_o, params.scale_softmax_log2);
-
-        Tensor rP = flash::convert_type<Element>(acc_s);
-        // Reshape rP from (MMA=4, MMA_M, MMA_N) to ((4, 2), MMA_M, MMA_N / 2)
-        // if using m16n8k16 or (4, MMA_M, MMA_N) if using m16n8k8.
-        Tensor tOrP = make_tensor(rP.data(), flash::convert_layout_acc_Aregs<Kernel_traits::TiledMma>(rP.layout()));
-
-        if (threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
-            print("\ncalling flash::gemm_rs()");
-        }
-        flash::gemm_rs(acc_o, tOrP, tOrVt, tOsVt, tiled_mma, smem_tiled_copy_V, smem_thr_copy_V);
-    }
-
     // Epilogue
 
     Tensor lse = softmax.template normalize_softmax_lse</*Is_dropout=*/false, Split>(acc_o, params.scale_softmax);
@@ -1006,7 +936,7 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
     // printf("blockIdx.x=%d blockIdx.y=%d blockIdx.z=%d threadIdx.x=%d threadIdx.y=%d threadIdx.z=%d\n", \
     // blockIdx.x, blockIdx.y, blockIdx.z, threadIdx.x, threadIdx.y, threadIdx.z);
     if (threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
-        print("\n");
+        print("\n\n");
     }
 }
 
