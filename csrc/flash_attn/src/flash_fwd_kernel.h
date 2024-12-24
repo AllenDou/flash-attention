@@ -760,7 +760,7 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
         print("\n");
     }
     //#pragma unroll
-    for (int masking_step = 0; masking_step < n_masking_steps; ++masking_step, --n_block) {
+    for (int masking_step = 0; masking_step < n_masking_steps/*2*/; ++masking_step, --n_block) {
         Tensor acc_s = partition_fragment_C(tiled_mma, Shape<Int<kBlockM>, Int<kBlockN>>{});  // (MMA=4, MMA_M, MMA_N)
         clear(acc_s);
         flash::cp_async_wait<0>();
@@ -791,9 +791,6 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
             smem_thr_copy_Q, smem_thr_copy_K
         );
         // if (cute::thread0()) { print(acc_s); }
-        if constexpr (Is_softcap){
-            flash::apply_softcap(acc_s, params.softcap);
-        }
 
         mask.template apply_mask<Is_causal, Is_even_MN>(
             acc_s, n_block * kBlockN, m_block * kBlockM + (tidx / 32) * 16 + (tidx % 32) / 4, kNWarps * 16
