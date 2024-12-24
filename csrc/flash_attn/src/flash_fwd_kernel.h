@@ -768,16 +768,6 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
 
         // Advance gV
         if (masking_step > 0) {
-            if (block_table == nullptr) {
-                tVgV.data() = tVgV.data() + (-int(kBlockN * params.v_row_stride));
-            } else {
-                const int block_table_idx_cur = (n_block + 1) * kBlockN / params.page_block_size;
-                const int block_table_offset_cur = (n_block + 1) * kBlockN - block_table_idx_cur * params.page_block_size;
-                const int block_table_idx_next = n_block * kBlockN / params.page_block_size;
-                const int block_table_offset_next = n_block * kBlockN - block_table_idx_next * params.page_block_size;
-                tVgV.data() = tVgV.data() + (block_table[block_table_idx_next] - block_table[block_table_idx_cur]) * params.v_batch_stride + (block_table_offset_next - block_table_offset_cur) * params.v_row_stride;
-            }
-            flash::copy</*Is_even_MN=*/true, Is_even_K>(gmem_tiled_copy_QKV, tVgV, tVsV, tKVcKV, tKVpKV);
         } else {
             // Clear the smem tiles to account for predicated off loads
             flash::copy<Is_even_MN, Is_even_K, /*Clear_OOB_MN=*/true>(
@@ -804,7 +794,6 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
             flash::apply_softcap(acc_s, params.softcap);
         }
 
-
         mask.template apply_mask<Is_causal, Is_even_MN>(
             acc_s, n_block * kBlockN, m_block * kBlockM + (tidx / 32) * 16 + (tidx % 32) / 4, kNWarps * 16
         );
@@ -813,23 +802,6 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
         __syncthreads();
         // if (tidx == 0 && blockIdx.y == 0 && blockIdx.z == 0) { print(tVsV); }
         // __syncthreads();
-
-        if (n_block > n_block_min) {
-            // Advance gK
-            if (block_table == nullptr) {
-                tKgK.data() = tKgK.data() + (-int(kBlockN * params.k_row_stride));
-            } else {
-                const int block_table_idx_cur = n_block * kBlockN / params.page_block_size;
-                const int block_table_offset_cur = n_block * kBlockN - block_table_idx_cur * params.page_block_size;
-                const int block_table_idx_next = (n_block - 1) * kBlockN / params.page_block_size;
-                const int block_table_offset_next =(n_block - 1) * kBlockN - block_table_idx_next * params.page_block_size;
-                tKgK.data() = tKgK.data() + (block_table[block_table_idx_next] - block_table[block_table_idx_cur]) * params.k_batch_stride + (block_table_offset_next - block_table_offset_cur) * params.k_row_stride;
-            }
-            flash::copy</*Is_even_MN=*/true, Is_even_K>(gmem_tiled_copy_QKV, tKgK, tKsK, tKVcKV, tKVpKV);
-            // This cp_async_fence needs to be in the if block, otherwise the synchronization
-            // isn't right and we get race conditions.
-            cute::cp_async_fence();
-        }
 
         // We have key_padding_mask so we'll need to Check_inf
         masking_step == 0
