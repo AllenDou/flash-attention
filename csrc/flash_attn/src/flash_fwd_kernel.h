@@ -582,7 +582,8 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
     const index_t row_offset_k = block_table == nullptr
         ? binfo.k_offset(params.k_batch_stride, params.k_row_stride, bidb_cache)
           + (n_block_max - 1) * kBlockN * params.k_row_stride + (bidh / params.h_h_k_ratio) * params.k_head_stride
-        : block_table[block_table_idx] * params.k_batch_stride + block_table_offset * params.k_row_stride + (bidh / params.h_h_k_ratio) * params.k_head_stride;
+        : block_table[block_table_idx] * params.k_batch_stride + block_table_offset * params.k_row_stride + \
+        (bidh / params.h_h_k_ratio) * params.k_head_stride;
     const index_t row_offset_v = block_table == nullptr
         ? binfo.k_offset(params.v_batch_stride, params.v_row_stride, bidb_cache)
           + (n_block_max - 1) * kBlockN * params.v_row_stride + (bidh / params.h_h_k_ratio) * params.v_head_stride
@@ -664,7 +665,8 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
         print("\n:acc_o: "); print(acc_o);
         print("\n");
     }
-#if 1
+
+#if 0
 
     //
     // Copy Atom retiling
@@ -731,6 +733,11 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
     clear(acc_o);
 
     flash::Softmax<2 * size<1>(acc_o)> softmax;
+
+    if (threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
+        print("\nSoftmax_row_max: "); print(softmax.row_max);
+        print("\nSoftmax_row_sum: "); print(softmax.row_sum);
+    }
 
     const float alibi_slope = !Has_alibi ? 0.0f : reinterpret_cast<float *>(params.alibi_slopes_ptr)[bidb * params.alibi_slopes_batch_stride + bidh] / params.scale_softmax;
     flash::Mask<Is_causal, Is_local, Has_alibi> mask(binfo.actual_seqlen_k, binfo.actual_seqlen_q, params.window_size_left, params.window_size_right, alibi_slope);
