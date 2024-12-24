@@ -782,15 +782,21 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
         //        TiledCopyA smem_tiled_copy_A, TiledCopyB smem_tiled_copy_B,
         //        ThrCopyA smem_thr_copy_A, ThrCopyB smem_thr_copy_B) {
 
-        if (threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
-            print("\ncalling flash::gemm()");
-        }
         // q k 计算
         flash::gemm(
             acc_s, tSrQ, tSrK, tSsQ, tSsK, tiled_mma, smem_tiled_copy_Q, smem_tiled_copy_K,
             smem_thr_copy_Q, smem_thr_copy_K
         );
         // if (cute::thread0()) { print(acc_s); }
+
+        if (threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
+            print("\ncalling flash::gemm");
+            print("\napply_mask: ");
+            //print("\nn_block: "); print(n_block);
+            //print("\nm_block: "); print(m_block);
+            //print("\nkBlockM: "); print(kBlockM);
+            //print("\nkBlockN: "); print(kBlockN);
+        }
 
         mask.template apply_mask<Is_causal, Is_even_MN>(
             acc_s, n_block * kBlockN, m_block * kBlockM + (tidx / 32) * 16 + (tidx % 32) / 4, kNWarps * 16
