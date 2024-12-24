@@ -808,11 +808,12 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
         // __syncthreads();
 
         // We have key_padding_mask so we'll need to Check_inf
-        softmax.template softmax_rescale_o</*Is_first=*/true,  /*Check_inf=*/Is_causal || Is_local || !Is_even_MN>(acc_s, acc_o, params.scale_softmax_log2);
+        softmax.template softmax_rescale_o</*Is_first=*/true,  /*Check_inf=*/Is_causal || Is_local || !Is_even_MN>(\
+                                            acc_s, acc_o, params.scale_softmax_log2);
         // if (cute::thread0()) { print(scores_max); print(scores_sum); print(scores); }
 
         // Convert acc_s from fp32 to fp16/bf16
-        Tensor rP = flash::convert_type<Element>(acc_s);
+        Tensor rP = flash::convert_type<Element>(acc_s); // 所有元素的exp序列, shape和 qk结果的shape一样
         // Reshape rP from (MMA=4, MMA_M, MMA_N) to ((4, 2), MMA_M, MMA_N / 2)
         // if using m16n8k16 or (4, MMA_M, MMA_N) if using m16n8k8.
         Tensor tOrP = make_tensor(rP.data(), flash::convert_layout_acc_Aregs<Kernel_traits::TiledMma>(rP.layout()));
