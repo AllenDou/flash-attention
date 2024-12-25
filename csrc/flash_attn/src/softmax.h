@@ -172,13 +172,13 @@ struct Softmax {
         TensorT lse = make_fragment_like(row_sum);
         Tensor acc_o_rowcol = make_tensor(acc_o.data(), flash::convert_layout_acc_rowcol(acc_o.layout()));
         static_assert(decltype(size<0>(acc_o_rowcol))::value == kNRows);
-        #pragma unroll
+        //#pragma unroll
         for (int mi = 0; mi < size<0>(acc_o_rowcol); ++mi) {
             float sum = row_sum(mi);
             float inv_sum = (sum == 0.f || sum != sum) ? 1.f : 1.f / sum;
             lse(mi) = (sum == 0.f || sum != sum) ? (Split ? -INFINITY : INFINITY) : row_max(mi) * softmax_scale + __logf(sum);
             float scale = !Is_dropout ? inv_sum : inv_sum * rp_dropout;
-            #pragma unroll
+            //#pragma unroll
             for (int ni = 0; ni < size<1>(acc_o_rowcol); ++ni) { acc_o_rowcol(mi, ni) *= scale; }
         }
         return lse;
