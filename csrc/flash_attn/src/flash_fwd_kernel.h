@@ -852,7 +852,7 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
     Tensor taccOrOaccum = smem_thr_copy_Oaccum.retile_S(rO);        // ((Atom,AtomNum), MMA_M, MMA_N)
     Tensor taccOsOaccum = smem_thr_copy_Oaccum.partition_D(sOaccum);     // ((Atom,AtomNum),PIPE_M,PIPE_N)
     if (threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
-        print("\nsOaccum: "); print(sOaccum);
+        print("\nsOaccum: "); print(sOaccum); // 64*64
         //print("\nrO: "); print(rO);
         //print("\ntaccOrOaccum: "); print(taccOrOaccum);
         print("\ntaccOsOaccum: "); print(taccOsOaccum);
@@ -886,6 +886,13 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
     Tensor tOsOaccum = gmem_thr_copy_Oaccum.partition_S(sOaccum);        // ((Atom,AtomNum),ATOM_M,ATOM_N)
     Tensor tOgOaccum = gmem_thr_copy_Oaccum.partition_D(gOaccum);
 
+    if (threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
+        print("\ngOaccum: "); print(gOaccum);
+        print("\ngLSEaccum: "); print(gLSEaccum);
+        print("\ntOsOaccum: "); print(tOsOaccum);
+        print("\ntOgOaccum: "); print(tOgOaccum);
+    }
+
     __syncthreads();
 
     Tensor tOrOaccum = make_tensor<ElementO>(shape(tOgOaccum));
@@ -914,6 +921,15 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
     flash::copy<Is_even_MN, Is_even_K, /*Clear_OOB_MN=*/false, /*Clear_OOB_K=*/false>(
         gmem_tiled_copy_Oaccum, tOrOaccum, tOgOaccum, tOcO, tOpO, binfo.actual_seqlen_q - m_block * kBlockM
     );
+    if (threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
+        print("\ntOrOaccum: "); print(tOrOaccum);
+        print("\ncaccO: "); print(caccO);
+        print("\ntaccOcO: "); print(taccOcO);
+        print("\ntaccOcO_row: "); print(taccOcO_row);
+        print("\ncO: "); print(cO);
+        print("\ntOcO: "); print(tOcO);
+        print("\ntOpO: "); print(tOpO);
+    }
 
 #endif
     if (threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
