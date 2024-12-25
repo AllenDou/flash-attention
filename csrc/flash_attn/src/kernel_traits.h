@@ -60,16 +60,16 @@ struct Flash_fwd_kernel_traits : public Base {
     static constexpr bool Is_Q_in_regs = Is_Q_in_regs_ || Share_Q_K_smem;
 
     // The number of threads.
-    static constexpr int kNWarps = kNWarps_;
-    static constexpr int kNThreads = kNWarps * 32;
+    static constexpr int kNWarps = kNWarps_;        // 4
+    static constexpr int kNThreads = kNWarps * 32;  // 128
 
-    static constexpr int kBlockM = kBlockM_;
-    static constexpr int kBlockN = kBlockN_;
-    static constexpr int kHeadDim = kHeadDim_;
+    static constexpr int kBlockM = kBlockM_;        // 64
+    static constexpr int kBlockN = kBlockN_;        // 256
+    static constexpr int kHeadDim = kHeadDim_;      // 64
     static_assert(kHeadDim % 32 == 0);
-    static constexpr int kBlockKSmem = kHeadDim % 64 == 0 ? 64 : 32;
-    static constexpr int kBlockKGmem = kHeadDim % 128 == 0 ? 128 : (kHeadDim % 64 == 0 ? 64 : 32);
-    static constexpr int kSwizzle = kBlockKSmem == 32 ? 2 : 3;
+    static constexpr int kBlockKSmem = kHeadDim % 64 == 0 ? 64 : 32; // 64
+    static constexpr int kBlockKGmem = kHeadDim % 128 == 0 ? 128 : (kHeadDim % 64 == 0 ? 64 : 32); // 64
+    static constexpr int kSwizzle = kBlockKSmem == 32 ? 2 : 3; // 3
 
     using TiledMma = TiledMMA<
         typename Base::MMA_Atom_Arch,
@@ -108,17 +108,17 @@ struct Flash_fwd_kernel_traits : public Base {
     static constexpr int kSmemKVSize = size(SmemLayoutKV{}) * 2 * sizeof(Element);
     static constexpr int kSmemSize = Share_Q_K_smem ? std::max(kSmemQSize, kSmemKVSize) : kSmemQSize + kSmemKVSize;
 
-    static constexpr int kGmemElemsPerLoad = sizeof(cute::uint128_t) / sizeof(Element);
+    static constexpr int kGmemElemsPerLoad = sizeof(cute::uint128_t) / sizeof(Element); // 16/2 = 8
     static_assert(kHeadDim % kGmemElemsPerLoad == 0, "kHeadDim must be a multiple of kGmemElemsPerLoad");
     // Using kBlockKSmem here is 6-10% faster than kBlockKGmem for d=128 because of bank conflicts.
     // For example, for d=128, smem is split into 2 "pages", each page takes care of columns
     // 0-63 and 64-127. If we have 16 threads per row for gmem read, when we write to smem,
     // thread 0 - 7 will write to the first page and thread 8 - 15 will write to the second page,
     // to the same banks.
-    static constexpr int kGmemThreadsPerRow = kBlockKSmem / kGmemElemsPerLoad;
+    static constexpr int kGmemThreadsPerRow = kBlockKSmem / kGmemElemsPerLoad; // 64/8 = 8
     static_assert(kNThreads % kGmemThreadsPerRow == 0, "kNThreads must be a multiple of kGmemThreadsPerRow");
     using GmemLayoutAtom = Layout<Shape <Int<kNThreads / kGmemThreadsPerRow>, Int<kGmemThreadsPerRow>>,
-                                  Stride<Int<kGmemThreadsPerRow>, _1>>;
+                                  Stride<Int<kGmemThreadsPerRow>, _1>>; // [16, 8]
 
     // We use CACHEGLOBAL instead of CACHEALWAYS for both Q and K/V, since we won't be reading
     // from the same address by the same threadblock. This is slightly faster.
