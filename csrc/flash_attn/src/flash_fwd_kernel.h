@@ -838,7 +838,8 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
         print("\nlse: "); print(lse);
     }
 
-    Tensor sOaccum = make_tensor(make_smem_ptr(reinterpret_cast<ElementO *>(smem_)), typename Kernel_traits::SmemLayoutO{}); // (SMEM_M,SMEM_N)
+    Tensor sOaccum = make_tensor(make_smem_ptr(reinterpret_cast<ElementO *>(smem_)), \
+                                                typename Kernel_traits::SmemLayoutO{}); // (SMEM_M,SMEM_N)
     // Partition sO to match the accumulator partitioning
     using SmemTiledCopyO = std::conditional_t<
         !Split,
@@ -850,6 +851,12 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
     Tensor rO = flash::convert_type<ElementO>(acc_o);
     Tensor taccOrOaccum = smem_thr_copy_Oaccum.retile_S(rO);        // ((Atom,AtomNum), MMA_M, MMA_N)
     Tensor taccOsOaccum = smem_thr_copy_Oaccum.partition_D(sOaccum);     // ((Atom,AtomNum),PIPE_M,PIPE_N)
+    if (threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
+        print("\nsOaccum: "); print(sOaccum);
+        //print("\nrO: "); print(rO);
+        //print("\ntaccOrOaccum: "); print(taccOrOaccum);
+        print("\ntaccOsOaccum: "); print(taccOsOaccum);
+    }
 
     // sOaccum is larger than sQ, so we need to syncthreads here
     // TODO: allocate enough smem for sOaccum
