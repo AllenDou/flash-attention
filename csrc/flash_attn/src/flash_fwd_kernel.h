@@ -707,10 +707,6 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
     // Prologue
 
     // Copy from Knew to K, optionally apply rotary embedding.
-    typename Kernel_traits::GmemTiledCopyRotcossin gmem_tiled_copy_rotary;
-    auto gmem_thr_copy_rotary = gmem_tiled_copy_rotary.get_thread_slice(tidx);
-    typename Kernel_traits::GmemTiledCopyRotcossinCont gmem_tiled_copy_rotary_cont;
-    auto gmem_thr_copy_rotary_cont = gmem_tiled_copy_rotary_cont.get_thread_slice(tidx);
 
     // Read Q from gmem to smem, optionally apply rotary embedding.
     if (!Append_KV || params.rotary_dim == 0) {
