@@ -226,15 +226,15 @@ if not SKIP_CUDA_BUILD and not IS_ROCM:
             sources=sources,
             extra_compile_args={
                 "cxx": ["-std=c++17",
-                        "-g",
-                        "-O0",
+                        #"-g",
+                        #"-O0",
                         HEADDIM_FLAG,
                         DTYPE_FLAG,
                         ],
                 "nvcc": append_nvcc_threads(
                     [
-                        "-O0",
-                        "-g",
+                        #"-O0",
+                        #"-g",
                         #"-G",
                         HEADDIM_FLAG,
                         DTYPE_FLAG,
