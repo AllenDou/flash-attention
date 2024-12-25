@@ -929,6 +929,8 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
         print("\ncO: "); print(cO);
         print("\ntOcO: "); print(tOcO);
         print("\ntOpO: "); print(tOpO);
+        print("\ngOaccum: "); print(gOaccum);
+        print("\nsOaccum: "); print(sOaccum);
     }
 
 #endif
