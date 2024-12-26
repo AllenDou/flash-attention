@@ -619,8 +619,8 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
     Tensor sVtNoSwizzle = make_tensor(sV.data().get(), typename Kernel_traits::SmemLayoutVtransposedNoSwizzle{});
 
     if (threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
-        print("\nmQ: "); print(mQ);
-        print("\ngQ: "); print(gQ);
+        print("\nmQ: "); print(mQ);     //print_tensor(mQ);
+        print("\ngQ: "); print(gQ);     //print_tensor(gQ);
         print("\ngK: "); print(gK);
         print("\ngV: "); print(gV);
         print("\nsQ: "); print(sQ);
@@ -651,6 +651,7 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
     Tensor acc_o = partition_fragment_C(tiled_mma, Shape<Int<kBlockM>, Int<kHeadDim>>{});  // MMA, MMA_M, MMA_K
 
     if (threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
+        
         print("\ngmem_thr_copy_QKV: "); print(gmem_thr_copy_QKV);
         print("\ntQgQ: "); print(tQgQ); //print_tensor(tQgQ);
         print("\ntQsQ: "); print(tQsQ); //print_tensor(tQsQ);
