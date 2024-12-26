@@ -206,7 +206,7 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
 
     if (threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
         
-        printf("\n =======TILED_COPY========");
+        printf("\n=======TILED_COPY========");
         print("\ngmem_thr_copy_QKV: "); print(gmem_thr_copy_QKV);
         print("\ntQgQ: "); print(tQgQ); //print_tensor(tQgQ);
         print("\ntQsQ: "); print(tQsQ); //print_tensor(tQsQ);
@@ -214,7 +214,7 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
         print("\ntKsK: "); print(tKsK);
         print("\ntVgV: "); print(tVgV);
         print("\ntVsV: "); print(tVsV);
-        printf("\n =======TILED_MMA========");
+        printf("\n=======TILED_MMA========");
         print("\nthr_mma:"); print(thr_mma);
         print("\ntSrQ: "); print(tSrQ); //print_tensor(tSrQ);
         print("\ntSrK: "); print(tSrK);
