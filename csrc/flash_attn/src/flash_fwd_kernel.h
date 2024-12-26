@@ -565,7 +565,6 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
     }
     
     if (true && threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
-        print("\n=====================");
         print("\nn_block_min: "); print(n_block_min);
         print("\nn_block_max: "); print(n_block_max);
     }
@@ -597,7 +596,6 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
     Tensor gQ = local_tile(mQ(_, bidh, _), Shape<Int<kBlockM/*64*/>, Int<kHeadDim/*64*/>>{},
                            make_coord(m_block/*0*/, 0));  // (kBlockM, kHeadDim)
     if (false && threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
-        print("\n=====================");
         print("\nmQ's content: "); print_tensor(mQ);
         print("\ngQ's content: "); print_tensor(gQ);
     }
@@ -751,13 +749,8 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
         ? 1
         : ((Is_even_MN && Is_causal) ? cute::ceil_div(kBlockM, kBlockN) : cute::ceil_div(kBlockM, kBlockN) + 1);
     if (threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
-        print("\n=============");
         print("\nn_masking_steps: "); print(n_masking_steps);
         print("\nn_block: "); print(n_block);
-        print("\n");
-    }
-    if (threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
-        print(n_block);
     }
     //#pragma unroll
     for (int masking_step = 0; masking_step < n_masking_steps/*2*/; ++masking_step, --n_block) {
