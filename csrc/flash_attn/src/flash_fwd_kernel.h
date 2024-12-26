@@ -168,6 +168,8 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
     Tensor sK = make_tensor(sQ.data() + size(sQ), typename Kernel_traits::SmemLayoutKV{});
     Tensor sV = make_tensor(sK.data() + size(sK), typename Kernel_traits::SmemLayoutKV{});
     Tensor sVt = make_tensor(sV.data(), typename Kernel_traits::SmemLayoutVtransposed{});
+    // 以上sQ sK sV sVt 都是在shared memory的, 所有默认是带有swizzle的, 
+    // 下面的sVtNoSwizzle是sV的转置, 但是没有swizzle, 用来计算softmax
     Tensor sVtNoSwizzle = make_tensor(sV.data().get(), typename Kernel_traits::SmemLayoutVtransposedNoSwizzle{});
 
     if (threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
@@ -204,6 +206,7 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
 
     if (threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
         
+        printf("\n =======TILED_COPY========");
         print("\ngmem_thr_copy_QKV: "); print(gmem_thr_copy_QKV);
         print("\ntQgQ: "); print(tQgQ); //print_tensor(tQgQ);
         print("\ntQsQ: "); print(tQsQ); //print_tensor(tQsQ);
@@ -211,6 +214,7 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
         print("\ntKsK: "); print(tKsK);
         print("\ntVgV: "); print(tVgV);
         print("\ntVsV: "); print(tVsV);
+        printf("\n =======TILED_MMA========");
         print("\nthr_mma:"); print(thr_mma);
         print("\ntSrQ: "); print(tSrQ); //print_tensor(tSrQ);
         print("\ntSrK: "); print(tSrK);
