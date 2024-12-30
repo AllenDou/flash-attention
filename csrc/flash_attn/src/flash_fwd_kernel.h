@@ -184,7 +184,10 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
         print("\nsVtNoSwizzle: "); print(sVtNoSwizzle);
         print("\n");
     }
-    typename Kernel_traits::GmemTiledCopyQKV gmem_tiled_copy_QKV;  // 这变量用来控制tile的copy
+    // 1. 这个 gmem_tiled_copy_QKV 以及 gmem_thr_copy_QKV是用来 copy 数据从global memory -> shared memory 的
+    // 2. 这个tiled跟后边的tile_mma的tile不是一个tile, 这里的tile仅仅是一块一块的copy的意思, tile的大小跟后边tiled_mma
+    // 的大小也没关系.
+    typename Kernel_traits::GmemTiledCopyQKV gmem_tiled_copy_QKV;
     auto gmem_thr_copy_QKV = gmem_tiled_copy_QKV.get_thread_slice(tidx);
 
     // 分别是全局内存&shared memory的 q k v, 被partition成线程级别的tensor
@@ -229,6 +232,8 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
     // Copy Atom retiling
     //
 
+    // 这个smem_tiled_copy_Q 是按照tiled_mma, 把Q数据从shared memory cp 到register的
+    // 这个copy和 tiled_mma是强绑定的, 因为copy后的数据要按照tiled_mma来计算.
     auto smem_tiled_copy_Q = make_tiled_copy_A(typename Kernel_traits::SmemCopyAtom{}, tiled_mma);
     auto smem_thr_copy_Q = smem_tiled_copy_Q.get_thread_slice(tidx);
     Tensor tSsQ = smem_thr_copy_Q.partition_S(sQ);
