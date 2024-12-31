@@ -71,6 +71,8 @@ struct Flash_fwd_kernel_traits : public Base {
     static constexpr int kBlockKGmem = kHeadDim % 128 == 0 ? 128 : (kHeadDim % 64 == 0 ? 64 : 32); // 64
     static constexpr int kSwizzle = kBlockKSmem == 32 ? 2 : 3; // 3
 
+    // using MMA_Atom_Arch = MMA_Atom<SM80_16x8x16_F32F16F16F32_TN>,
+    // 参考 https://zhuanlan.zhihu.com/p/699255051 的图片
     using TiledMma = TiledMMA<
         typename Base::MMA_Atom_Arch,
         Layout<Shape<Int<kNWarps>,_1,_1>>,  // 4x1x1 or 8x1x1 thread group
