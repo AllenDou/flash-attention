@@ -45,7 +45,9 @@ __device__ __forceinline__ void quad_allreduce_(Tensor<Engine0, Layout0> &dst, T
 
 template<bool zero_init=true, typename Engine0, typename Layout0, typename Engine1, typename Layout1, typename Operator>
 __device__ __forceinline__ void reduce_(Tensor<Engine0, Layout0> const& tensor, Tensor<Engine1, Layout1> &summary, Operator &op) {
-    // 参考 https://zhuanlan.zhihu.com/p/699255051 图片, 横向4个线程握住8个数据.
+    // 见 TiledMMA, 横向4个线程, 在纵向32个线程, 共计4个warp 128个线程.
+    //  ThrLayoutVMNK:  (_32,_4,_1,_1):(_1,_32,_0,_0)
+
     thread_reduce_<zero_init>(tensor, summary, op);
     quad_allreduce_(summary, summary, op);
 }
