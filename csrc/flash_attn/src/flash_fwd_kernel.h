@@ -238,6 +238,7 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
     // Tensor tKVpKV = make_tensor<bool>(make_shape(size<1>(tKsK), size<2>(tKsK)), Stride<_1,_0>{});
 
     // Construct identity layout for sQ and sK
+    // 构造只有形状没有类型的tensor，用于一些特定变换
     Tensor cQ = make_identity_tensor(make_shape(size<0>(sQ), size<1>(sQ)));    // (BLK_M,BLK_K) -> (blk_m,blk_k)
     Tensor cKV = make_identity_tensor(make_shape(size<0>(sK), size<1>(sK)));    // (BLK_N,BLK_K) -> (blk_n,blk_k)
 
@@ -330,11 +331,7 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
         // if (cute::thread0()) { print(acc_s); }
 
         if (threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
-            //print(acc_o);
-            //print("\nn_block: "); print(n_block);
-            //print("\nm_block: "); print(m_block);
-            //print("\nkBlockM: "); print(kBlockM);
-            //print("\nkBlockN: "); print(kBlockN);
+            //print("\naaa: "); print(aaa);
         }
 
         mask.template apply_mask<Is_causal, Is_even_MN>(
@@ -400,6 +397,7 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
     // TODO: allocate enough smem for sOaccum
     if constexpr (Split) { __syncthreads(); }
 
+    // acc_o是寄存器上的, 通過如下方式, cp到shared memory上
     cute::copy(smem_tiled_copy_Oaccum, taccOrOaccum, taccOsOaccum);
 
     const index_t row_offset_o = binfo.q_offset(params.o_batch_stride, params.o_row_stride, bidb)
@@ -433,7 +431,9 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
 
     __syncthreads();
 
+    // 创建寄存器变量, 和global memory的变量shape一样.
     Tensor tOrOaccum = make_tensor<ElementO>(shape(tOgOaccum));
+    // shared memory上的数据, cp到register上
     cute::copy(gmem_tiled_copy_Oaccum, tOsOaccum, tOrOaccum);
 
     Tensor caccO = make_identity_tensor(Shape<Int<kBlockM>, Int<kHeadDim>>{});    // (BLK_M,BLK_K) -> (blk_m,blk_k)
@@ -451,11 +451,13 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
     }
 
     // Construct identity layout for sO
+    // 构造只有形状没有类型的tensor，用于一些特定变换
     Tensor cO = make_identity_tensor(make_shape(size<0>(sOaccum), size<1>(sOaccum)));    // (BLK_M,BLK_K) -> (blk_m,blk_k)
     // Repeat the partitioning with identity layouts
     Tensor tOcO = gmem_thr_copy_Oaccum.partition_D(cO);                           // (ACPY,ACPY_M,ACPY_K) -> (blk_m,blk_k)
     Tensor tOpO = make_tensor<bool>(make_shape(size<2>(tOgOaccum)));
     // Clear_OOB_K must be false since we don't want to write zeros to gmem
+    // 把register里的数据cp到glbal memory上
     flash::copy<Is_even_MN, Is_even_K, /*Clear_OOB_MN=*/false, /*Clear_OOB_K=*/false>(
         gmem_tiled_copy_Oaccum, tOrOaccum, tOgOaccum, tOcO, tOpO, binfo.actual_seqlen_q - m_block * kBlockM
     );
