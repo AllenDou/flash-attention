@@ -170,6 +170,7 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
     auto gmem_thr_copy_QKV = gmem_tiled_copy_QKV.get_thread_slice(tidx);
 
     // 分别是全局内存&shared memory的 q k v, 被partition成线程级别的tensor
+    // S D分别是source destination的意思, 就是接触tiledcopy把数据从S cp到D
     Tensor tQgQ = gmem_thr_copy_QKV.partition_S(gQ);
     Tensor tQsQ = gmem_thr_copy_QKV.partition_D(sQ);
     Tensor tKgK = gmem_thr_copy_QKV.partition_S(gK);  // (KCPY, KCPY_N, KCPY_K)
@@ -180,6 +181,9 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
     typename Kernel_traits::TiledMma tiled_mma; // 这个变量用来控制tile的mma
     auto thr_mma = tiled_mma.get_thread_slice(tidx);
     // 分别是线程级别的 存在寄存器里的要即将做mma的tensor
+    // 意思是获取线程级别的 矩阵乘法的A B数据, 也就是 Q K数据, A B数据的编排是不一样的, 有点类似tensor core的数据编排
+    // 所以有了A B的区分, 可以参考 ptx mma.m16n8k16的thread value编排.
+    // AB计算后的结果C, 也有线程value编排, 可以见 ptx的mma.m16n8k16.
     Tensor tSrQ  = thr_mma.partition_fragment_A(sQ);                           // (MMA,MMA_M,MMA_K)
     Tensor tSrK  = thr_mma.partition_fragment_B(sK);                           // (MMA,MMA_N,MMA_K)
     Tensor tOrVt  = thr_mma.partition_fragment_B(sVtNoSwizzle);                // (MMA, MMA_K,MMA_N)
@@ -264,6 +268,7 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
 
     int n_block = n_block_max - 1;
     // We don't need to clear the sK smem tiles since we'll mask out the scores anyway.
+    // 这里是 global memory 拷贝到 shared memory, 异步的, 因此需要fence waitgroup等.
     flash::copy<Is_even_MN, Is_even_K>(gmem_tiled_copy_QKV, tKgK, tKsK, tKVcKV, tKVpKV,
                                        binfo.actual_seqlen_k - n_block * kBlockN);
     // 在循环之前 提前cp q k.
@@ -372,6 +377,7 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
 
     // Epilogue
 
+    // 此时只是计算了最终的lse, 但是后边并没有使用.
     Tensor lse = softmax.template normalize_softmax_lse</*Is_dropout=*/false, Split>(acc_o, params.scale_softmax);
     // if (cute::thread0()) { print(lse); }
     if (threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
@@ -392,7 +398,7 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
     Tensor taccOrOaccum = smem_thr_copy_Oaccum.retile_S(rO);        // ((Atom,AtomNum), MMA_M, MMA_N)
     Tensor taccOsOaccum = smem_thr_copy_Oaccum.partition_D(sOaccum);     // ((Atom,AtomNum),PIPE_M,PIPE_N)
     if (threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
-        print("\nzzzzzzzzzz");
+        print("\n==========");
         print("\nsOaccum: "); print(sOaccum); // 64*64
         //print("\nrO: "); print(rO);
         //print("\ntaccOrOaccum: "); print(taccOrOaccum);
