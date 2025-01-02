@@ -266,6 +266,7 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
     // We don't need to clear the sK smem tiles since we'll mask out the scores anyway.
     flash::copy<Is_even_MN, Is_even_K>(gmem_tiled_copy_QKV, tKgK, tKsK, tKVcKV, tKVpKV,
                                        binfo.actual_seqlen_k - n_block * kBlockN);
+    // 在循环之前 提前cp q k.
     cute::cp_async_fence();
 
     // flash::cp_async_wait<0>();
@@ -311,6 +312,7 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
         if (masking_step > 0) {
         } else {
             // Clear the smem tiles to account for predicated off loads
+            // 在gemm a k的前一时刻, 触发copy v
             flash::copy<Is_even_MN, Is_even_K, /*Clear_OOB_MN=*/true>(
                 gmem_tiled_copy_QKV, tVgV, tVsV, tKVcKV, tKVpKV, binfo.actual_seqlen_k - n_block * kBlockN
             );
@@ -324,6 +326,9 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
         //        ThrCopyA smem_thr_copy_A, ThrCopyB smem_thr_copy_B) {
 
         // q k 计算
+        // 这里的flash::gemm(也就是cute::gemm) 并不像cute的example那样 在for k_tile里, 有可能是因为flash-attn
+        // 在并行度上已经非常大, 每个sm处理的就是类似 (1,64) (128,64) (128,64) 这样的小size的计算, 也就是说, 
+        // 这里的k_tile数有可能就是1.
         flash::gemm(
             acc_s, tSrQ, tSrK, tSsQ, tSsK, tiled_mma, smem_tiled_copy_Q, smem_tiled_copy_K,
             smem_thr_copy_Q, smem_thr_copy_K
