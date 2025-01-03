@@ -115,6 +115,7 @@ void run_flash_splitkv_fwd(Flash_fwd_params &params, cudaStream_t stream) {
     static_assert(!Kernel_traits::Is_Q_in_regs, "SplitKV implementation does not support Is_Q_in_regs");
     static_assert(!Kernel_traits::Share_Q_K_smem, "SplitKV implementation does not support Share_Q_K_smem");
     constexpr size_t smem_size = Kernel_traits::kSmemSize;
+    // 在decoding阶段, 这个q长度都是1, 因为已经过了prefill(prefill阶段的q会比较长)
     const int num_m_block = (params.seqlen_q/*字数*/ + Kernel_traits::kBlockM/*64*/ - 1) / Kernel_traits::kBlockM;
     dim3 grid(num_m_block, \
                 params.num_splits > 1 ? params.num_splits : params.b, \
