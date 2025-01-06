@@ -165,9 +165,17 @@ template<typename Tensor0, typename Tensor1, typename Tensor2, typename Tensor3,
 __forceinline__ __device__ void gemm_rs(Tensor0 &acc, Tensor1 &tCrA, Tensor2 &tCrB, Tensor3 const& tCsB,
                                TiledMma tiled_mma, TiledCopy smem_tiled_copy_B,
                                ThrCopy smem_thr_copy_B) {
-    CUTE_STATIC_ASSERT_V(size<1>(tCrA) == size<1>(acc));                     // MMA_M
-    CUTE_STATIC_ASSERT_V(size<1>(tCrB) == size<2>(acc));                     // MMA_N
-    CUTE_STATIC_ASSERT_V(size<2>(tCrA) == size<2>(tCrB));                     // MMA_K
+    CUTE_STATIC_ASSERT_V(size<1>(tCrA) == size<1>(acc));                       // MMA_M
+    CUTE_STATIC_ASSERT_V(size<1>(tCrB) == size<2>(acc));                       // MMA_N
+    
+    // old
+    CUTE_STATIC_ASSERT_V((size<2>(tCrA) == _16{}) && (size<2>(tCrB) == _16{}));// MMA_K
+    CUTE_STATIC_ASSERT_V(size<2>(tCrA) == size<2>(tCrB));                      // MMA_K
+
+    // new
+    //CUTE_STATIC_ASSERT_V((size<2>(tCrA) == _4{}) && (size<2>(tCrB) == _16{})); // MMA_K
+    //CUTE_STATIC_ASSERT_V(size<2>(tCrA) == size<2>(tCrB));                      // MMA_K
+    
     Tensor tCrB_copy_view = smem_thr_copy_B.retile_D(tCrB);
     CUTE_STATIC_ASSERT_V(size<1>(tCsB) == size<1>(tCrB_copy_view));            // N
     // 这里的copy是 shared memory 拷贝到 registry, 不需要fence waitgroup
@@ -201,6 +209,12 @@ __forceinline__ __device__ auto convert_layout_acc_Aregs(Layout acc_layout) {
     using X = Underscore;
     static_assert(decltype(size<0>(acc_layout))::value == 4);
     static_assert(decltype(rank(acc_layout))::value == 3);
+
+    constexpr int mma_shape_M = get<0>(typename MMA_traits::Shape_MNK{});
+    static_assert(mma_shape_M == 16);
+    constexpr int mma_shape_N = get<1>(typename MMA_traits::Shape_MNK{});
+    static_assert(mma_shape_N == 8);
+
     constexpr int mma_shape_K = get<2>(typename MMA_traits::Shape_MNK{});
     static_assert(mma_shape_K == 8 || mma_shape_K == 16);
     if constexpr (mma_shape_K == 8) {
