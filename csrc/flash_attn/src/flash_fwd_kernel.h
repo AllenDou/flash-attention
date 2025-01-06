@@ -201,6 +201,7 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
         print("\ntVgV: "); print(tVgV);
         print("\ntVsV: "); print(tVsV);
         printf("\n=======TILED_MMA========");
+        print("\ntiled_mma:"); print(size(tiled_mma));
         print("\nthr_mma:"); print(thr_mma);
         print("\ntSrQ: "); print(tSrQ); //print_tensor(tSrQ);
         print("\ntSrK: "); print(tSrK);
