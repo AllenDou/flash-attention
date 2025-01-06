@@ -368,6 +368,9 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
         // 在gemm_rs(也就是qk结果和v计算)之前一刻, 会触发k的copy
         if (threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
             print("\n**** flash_gemm_rs(): ");
+            //print("\ntOrP: "); print(tOrP);
+            print("\ntOrVt: "); print(tOrVt);
+            print("\nacc_o: "); print(acc_o);
         }
         flash::gemm_rs(acc_o, tOrP, tOrVt, tOsVt, tiled_mma, smem_tiled_copy_V, smem_thr_copy_V);
 
