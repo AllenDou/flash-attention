@@ -313,6 +313,9 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
     for (int masking_step = 0; masking_step < n_masking_steps/*2*/; ++masking_step, --n_block) {
         Tensor acc_s = partition_fragment_C(tiled_mma, Shape<Int<kBlockM>, Int<kBlockN>>{});  // (MMA=4, MMA_M, MMA_N)
         clear(acc_s);
+        if (threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
+            print("\nacc_s: "); print(acc_s);
+        }
         flash::cp_async_wait<0>();
         __syncthreads();
 
