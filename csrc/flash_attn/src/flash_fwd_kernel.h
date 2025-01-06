@@ -179,6 +179,7 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
     Tensor tVsV = gmem_thr_copy_QKV.partition_D(sV);
 
     typename Kernel_traits::TiledMma tiled_mma; // 这个变量用来控制tile的mma
+    typename Kernel_traits::TiledMma2 tiled_mma2; // 这个变量用来控制tile的mma
     auto thr_mma = tiled_mma.get_thread_slice(tidx);
     // 分别是线程级别的 存在寄存器里的要即将做mma的tensor
     // 意思是获取线程级别的 矩阵乘法的A B数据, 也就是 Q K数据, A B数据的编排是不一样的, 有点类似tensor core的数据编排
@@ -202,6 +203,7 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
         print("\ntVsV: "); print(tVsV);
         printf("\n=======TILED_MMA========");
         print("\ntiled_mma:"); print(size(tiled_mma));
+        //print("\ntiled_mma2:"); print(tiled_mma2);
         print("\nthr_mma:"); print(thr_mma);
         print("\ntSrQ: "); print(tSrQ); //print_tensor(tSrQ);
         print("\ntSrK: "); print(tSrK);

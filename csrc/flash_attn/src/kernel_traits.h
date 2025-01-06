@@ -81,6 +81,15 @@ struct Flash_fwd_kernel_traits : public Base {
                                             // 如配置, 发现需要物理的4个atom在N方向重复2次
         //Layout<Shape<_1,Int<kNWarps>,_1>>,
         //Tile<_16, Int<16 * kNWarps>, _16>>;
+    
+    using TiledMma2 = TiledMMA<
+        typename Base::MMA_Atom_Arch,
+        //Layout<Shape<Int<kNWarps>,_1,_1>>,  // 这个layout是物理层面的, 有几个atom, 如配置, M方向4个
+        //                                    // 4x1x1 or 8x1x1 thread group
+        //Tile<Int<16 * kNWarps>, _16, _16>>; // 这个是逻辑方面的layout, 表示当前这个TiledMma要处理什么规格的tile,
+        //                                    // 如配置, 发现需要物理的4个atom在N方向重复2次
+        Layout<Shape<_1,Int<kNWarps>,_1>>,
+        Tile<_16, Int<16 * kNWarps>, _16>>;
 
     using SmemLayoutAtomQ = decltype(
         composition(Swizzle<kSwizzle, 3, 3>{},
