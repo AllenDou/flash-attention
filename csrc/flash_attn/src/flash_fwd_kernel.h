@@ -343,9 +343,6 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
         );
         // if (cute::thread0()) { print(acc_s); }
 
-        if (threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
-            //print("\naaa: "); print(aaa);
-        }
 
         mask.template apply_mask<Is_causal, Is_even_MN>(
             acc_s, n_block * kBlockN, m_block * kBlockM + (tidx / 32) * 16 + (tidx % 32) / 4, kNWarps * 16
@@ -369,6 +366,9 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
 
         // q k 计算的结果和v计算
         // 在gemm_rs(也就是qk结果和v计算)之前一刻, 会触发k的copy
+        if (threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
+            print("\n**** flash_gemm_rs(): ");
+        }
         flash::gemm_rs(acc_o, tOrP, tOrVt, tOsVt, tiled_mma, smem_tiled_copy_V, smem_thr_copy_V);
 
         // This check is at the end of the loop since we always have at least 1 iteration
