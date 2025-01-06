@@ -206,6 +206,7 @@ __forceinline__ __device__ auto convert_layout_acc_Aregs(Layout acc_layout) {
     if constexpr (mma_shape_K == 8) {
         return acc_layout;
     } else {
+        // meaning mma_shape_k == 16
         // 参考 layout计算, https://zhuanlan.zhihu.com/p/663093816
         auto l = logical_divide(acc_layout, Shape<X, X, _2>{});  // (4, MMA_M, (2, MMA_N / 2)))
         return make_layout(make_layout(get<0>(l), get<2, 0>(l)), get<1>(l), get<2, 1>(l));
