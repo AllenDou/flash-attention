@@ -216,8 +216,6 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
         print("\ntSrK: "); print(tSrK);
         print("\ntSrK2: "); print(tSrK2);
         print("\ntOrVt: "); print(tOrVt);
-        print("\nacc_o: "); print(acc_o);
-        print("\n");
     }
 
 #if 1
