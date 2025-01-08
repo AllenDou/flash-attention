@@ -214,7 +214,7 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
         //print("\ntSrQ2: "); print(tSrQ2); //print_tensor(tSrQ);
         print("\ntSrK: "); print(tSrK);
         //print("\ntSrK2: "); print(tSrK2);
-        print("\ntOrVt: "); print(tOrVt);
+        //print("\ntOrVt: "); print(tOrVt);
     }
 
 #if 1
