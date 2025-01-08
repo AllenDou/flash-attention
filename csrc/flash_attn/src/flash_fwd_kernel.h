@@ -208,8 +208,8 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
     if (threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
         printf("\n=======TILED_MMA========");
         print("\ntiled_mma:"); print(size(tiled_mma));
-        //print("\ntiled_mma2:"); print(tiled_mma2);
         print("\nthr_mma:"); print(thr_mma);
+        //print("\ntiled_mma2:"); print(tiled_mma2);
         print("\ntSrQ: "); print(tSrQ); //print_tensor(tSrQ);
         //print("\ntSrQ2: "); print(tSrQ2); //print_tensor(tSrQ);
         print("\ntSrK: "); print(tSrK);
