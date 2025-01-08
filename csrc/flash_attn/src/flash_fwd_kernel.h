@@ -162,7 +162,6 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
         print("\nsV: "); print(sV);
         print("\nsVt: "); print(sVt);
         print("\nsVtNoSwizzle: "); print(sVtNoSwizzle);
-        print("\n");
     }
     // 1. 这个 gmem_tiled_copy_QKV 以及 gmem_thr_copy_QKV是用来 copy 数据从global memory -> shared memory 的
     // 2. 这个tiled跟后边的tile_mma的tile不是一个tile, 这里的tile仅仅是一块一块的copy的意思, tile的大小跟后边tiled_mma
