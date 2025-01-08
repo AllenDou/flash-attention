@@ -452,10 +452,10 @@ def test_flash_attn_kvcache(
         reorder_ops=True,
         key_leftpad=cache_leftpad,
     )
-    print(f"Output max diff: {(out - out_ref).abs().max().item()}", end="")
-    print(f" Output mean diff: {(out - out_ref).abs().mean().item()}", end="")
-    print(f" Pytorch max diff: {(out_pt - out_ref).abs().max().item()}", end="")
-    print(f" Pytorch mean diff: {(out_pt - out_ref).abs().mean().item()}", end="")
+    #print(f"Output max diff: {(out - out_ref).abs().max().item()}", end="")
+    #print(f" Output mean diff: {(out - out_ref).abs().mean().item()}", end="")
+    #print(f" Pytorch max diff: {(out_pt - out_ref).abs().max().item()}", end="")
+    #print(f" Pytorch mean diff: {(out_pt - out_ref).abs().mean().item()}", end="")
 
     # Check that FlashAttention's numerical error is at most twice the numerical error
     # of a Pytorch implementation.
