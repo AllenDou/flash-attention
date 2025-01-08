@@ -375,7 +375,7 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
         // q k 计算的结果和v计算
         // 在gemm_rs(也就是qk结果和v计算)之前一刻, 会触发k的copy
         if (threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
-            print("\n**** flash_gemm_rs(): ");
+            print("\n*** flash_gemm_rs ***");
             print("\ntOrP: could't print, will cause exception."); // print(tOrP); // 这个print会导致后续数据不对, 校验失败, 进测试时打开
             print("\ntOrVt: "); print(tOrVt);
             print("\nacc_o: "); print(acc_o);
