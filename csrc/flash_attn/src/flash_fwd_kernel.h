@@ -211,9 +211,9 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
         //print("\ntiled_mma2:"); print(tiled_mma2);
         print("\nthr_mma:"); print(thr_mma);
         print("\ntSrQ: "); print(tSrQ); //print_tensor(tSrQ);
-        print("\ntSrQ2: "); print(tSrQ2); //print_tensor(tSrQ);
+        //print("\ntSrQ2: "); print(tSrQ2); //print_tensor(tSrQ);
         print("\ntSrK: "); print(tSrK);
-        print("\ntSrK2: "); print(tSrK2);
+        //print("\ntSrK2: "); print(tSrK2);
         print("\ntOrVt: "); print(tOrVt);
     }
 
@@ -240,7 +240,7 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
     if (false && threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
         print("\ntSsQ: "); print(tSsQ); print(" stride: "); print(tSsQ.stride());
         print("\ntSsK: "); print(tSsK); print(" stride: "); print(tSsK.stride());
-        print("\ntOsVt: "); print(tOsVt); print(" stride: "); print(tOsVt.stride());
+        //print("\ntOsVt: "); print(tOsVt); print(" stride: "); print(tOsVt.stride());
     }
     // PREDICATES
     //
