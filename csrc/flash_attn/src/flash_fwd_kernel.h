@@ -194,7 +194,7 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
 
     Tensor acc_o = partition_fragment_C(tiled_mma, Shape<Int<kBlockM>, Int<kHeadDim>>{});  // MMA, MMA_M, MMA_K
 
-    if (threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
+    if (false && threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
         printf("\n=======TILED_COPY========");
         print("\ngmem_thr_copy_QKV: "); print(gmem_thr_copy_QKV);
         print("\ntQgQ: "); print(tQgQ); //print_tensor(tQgQ);
