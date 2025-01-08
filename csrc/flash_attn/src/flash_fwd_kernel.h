@@ -152,6 +152,7 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
     Tensor sVtNoSwizzle = make_tensor(sV.data().get(), typename Kernel_traits::SmemLayoutVtransposedNoSwizzle{});
 
     if (threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
+        print("\nGlobal & shared memory data: ");
         print("\nmQ: "); print(mQ);     //print_tensor(mQ);
         print("\ngQ: "); print(gQ);     //print_tensor(gQ);
         print("\ngK: "); print(gK);
@@ -194,8 +195,7 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
 
     Tensor acc_o = partition_fragment_C(tiled_mma, Shape<Int<kBlockM>, Int<kHeadDim>>{});  // MMA, MMA_M, MMA_K
 
-    if (threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
-        
+    if (false && threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
         printf("\n=======TILED_COPY========");
         print("\ngmem_thr_copy_QKV: "); print(gmem_thr_copy_QKV);
         print("\ntQgQ: "); print(tQgQ); //print_tensor(tQgQ);
@@ -204,6 +204,9 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
         print("\ntKsK: "); print(tKsK);
         print("\ntVgV: "); print(tVgV);
         print("\ntVsV: "); print(tVsV);
+    }
+
+    if (threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
         printf("\n=======TILED_MMA========");
         print("\ntiled_mma:"); print(size(tiled_mma));
         //print("\ntiled_mma2:"); print(tiled_mma2);
@@ -291,7 +294,7 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
 
     flash::Softmax<2 * size<1>(acc_o)> softmax;
 
-    if (threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
+    if (false && threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
         print("\nSoftmax_row_max: "); print(softmax.row_max);
         print("\nSoftmax_row_sum: "); print(softmax.row_sum);
     }
@@ -310,7 +313,7 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
     constexpr int n_masking_steps = (!Is_causal && !Is_local)
         ? 1
         : ((Is_even_MN && Is_causal) ? cute::ceil_div(kBlockM, kBlockN) : cute::ceil_div(kBlockM, kBlockN) + 1);
-    if (threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
+    if (false && threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
         print("\nn_masking_steps: "); print(n_masking_steps);
         print("\nn_block: "); print(n_block);
     }
@@ -394,7 +397,7 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
     // 此时只是计算了最终的lse, 但是后边并没有使用.
     Tensor lse = softmax.template normalize_softmax_lse</*Is_dropout=*/false, Split>(acc_o, params.scale_softmax);
     // if (cute::thread0()) { print(lse); }
-    if (threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
+    if (false && threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
         print("\nlse: "); print(lse);
     }
 
@@ -411,7 +414,7 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
     Tensor rO = flash::convert_type<ElementO>(acc_o);
     Tensor taccOrOaccum = smem_thr_copy_Oaccum.retile_S(rO);        // ((Atom,AtomNum), MMA_M, MMA_N)
     Tensor taccOsOaccum = smem_thr_copy_Oaccum.partition_D(sOaccum);     // ((Atom,AtomNum),PIPE_M,PIPE_N)
-    if (threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
+    if (false && threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
         print("\n==========");
         print("\nsOaccum: "); print(sOaccum); // 64*64
         //print("\nrO: "); print(rO);
@@ -448,7 +451,7 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
     Tensor tOsOaccum = gmem_thr_copy_Oaccum.partition_S(sOaccum);        // ((Atom,AtomNum),ATOM_M,ATOM_N)
     Tensor tOgOaccum = gmem_thr_copy_Oaccum.partition_D(gOaccum);
 
-    if (threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
+    if (false && threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
         print("\ngOaccum: "); print(gOaccum);
         print("\ngLSEaccum: "); print(gLSEaccum);
         print("\ntOsOaccum: "); print(tOsOaccum);
@@ -487,7 +490,7 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
     flash::copy<Is_even_MN, Is_even_K, /*Clear_OOB_MN=*/false, /*Clear_OOB_K=*/false>(
         gmem_tiled_copy_Oaccum, tOrOaccum, tOgOaccum, tOcO, tOpO, binfo.actual_seqlen_q - m_block * kBlockM
     );
-    if (threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
+    if (false && threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
         print("\n=====");
         print("\ntOrOaccum: "); print(tOrOaccum);
         print("\ncaccO: "); print(caccO);

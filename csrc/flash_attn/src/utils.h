@@ -180,7 +180,7 @@ __forceinline__ __device__ void gemm_rs(Tensor0 &acc, Tensor1 &tCrA, Tensor2 &tC
     CUTE_STATIC_ASSERT_V(size<1>(tCsB) == size<1>(tCrB_copy_view));            // N
     // 这里的copy是 shared memory 拷贝到 registry, 不需要fence waitgroup
     cute::copy(smem_tiled_copy_B, tCsB(_, _, _0{}), tCrB_copy_view(_, _, _0{}));
-    if (threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
+    if (false && threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
         print("\ninner gemm_rs: ");
         //print("\ntCrA: "); print(tCrA);
         print("\ntCrB: "); print(tCrB);
