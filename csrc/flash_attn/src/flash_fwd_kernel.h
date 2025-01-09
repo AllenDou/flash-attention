@@ -181,6 +181,7 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
     typename Kernel_traits::TiledMma tiled_mma; // 这个变量用来控制tile的mma
     typename Kernel_traits::TiledMma2 tiled_mma2; // 这个变量用来控制tile的mma
     auto thr_mma = tiled_mma.get_thread_slice(tidx);
+    auto thr_mma2 = tiled_mma2.get_thread_slice(tidx);
     //auto thr_mma2 = tiled_mma2.get_thread_slice(tidx);
     // 分别是线程级别的 存在寄存器里的要即将做mma的tensor
     // 意思是获取线程级别的 矩阵乘法的A B数据, 也就是 Q K数据, A B数据的编排是不一样的, 有点类似tensor core的数据编排
@@ -191,6 +192,7 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
     Tensor tSrK  = thr_mma.partition_fragment_B(sK);                           // (MMA,MMA_N,MMA_K)
     //Tensor tSrK2  = thr_mma2.partition_fragment_B(sK);                           // (MMA,MMA_N,MMA_K)
     Tensor tOrVt  = thr_mma.partition_fragment_B(sVtNoSwizzle);                // (MMA, MMA_K,MMA_N)
+    Tensor tOrVt2  = thr_mma2.partition_fragment_B(sVtNoSwizzle);                // (MMA, MMA_K,MMA_N)
 
     Tensor acc_o = partition_fragment_C(tiled_mma, Shape<Int<kBlockM>, Int<kHeadDim>>{});  // MMA, MMA_M, MMA_K
     Tensor acc_o2 = partition_fragment_C(tiled_mma2, Shape<Int<kBlockM>, Int<kHeadDim>>{});  // MMA, MMA_M, MMA_K
@@ -375,6 +377,7 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
             print("\n*** flash_gemm_rs ***");
             print("\ntOrP: could't print, will cause exception."); // print(tOrP); // 这个print会导致后续数据不对, 校验失败, 进测试时打开
             print("\ntOrVt: "); print(tOrVt);
+            print("\ntOrVt2: "); print(tOrVt2);
             print("\nacc_o: "); print(acc_o);
             print("\nacc_o2: "); print(acc_o2);
         }
