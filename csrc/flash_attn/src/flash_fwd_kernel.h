@@ -376,7 +376,12 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
             print("\ntOrVt: "); print(tOrVt);
             print("\nacc_o: "); print(acc_o);
         }
+#if 0 // for testing.
+        Tensor t_tOrVt = make_tensor(tOrVt.data(), flash::convert_layout_acc_Aregs2<Kernel_traits::TiledMma>(tOrVt.layout()));
+        flash::gemm_rs(acc_o, tOrP, t_tOrVt, tOsVt, tiled_mma, smem_tiled_copy_V, smem_thr_copy_V);
+#else
         flash::gemm_rs(acc_o, tOrP, tOrVt, tOsVt, tiled_mma, smem_tiled_copy_V, smem_thr_copy_V);
+#endif
 
         // This check is at the end of the loop since we always have at least 1 iteration
         if (n_masking_steps/*2*/ > 1 && n_block/*0*/ <= n_block_min/*0*/) {

@@ -173,7 +173,8 @@ __forceinline__ __device__ void gemm_rs(Tensor0 &acc, Tensor1 &tCrA, Tensor2 &tC
     CUTE_STATIC_ASSERT_V(size<2>(tCrA) == size<2>(tCrB));                      // MMA_K
 
     // new
-    //CUTE_STATIC_ASSERT_V((size<2>(tCrA) == _4{}) && (size<2>(tCrB) == _16{})); // MMA_K
+    //CUTE_STATIC_ASSERT_V(size<2>(tCrA) == _4{}); // MMA_K
+    //CUTE_STATIC_ASSERT_V(size<2>(tCrB) == _16{}); // MMA_K
     //CUTE_STATIC_ASSERT_V(size<2>(tCrA) == size<2>(tCrB));                      // MMA_K
     
     Tensor tCrB_copy_view = smem_thr_copy_B.retile_D(tCrB);
@@ -232,6 +233,32 @@ __forceinline__ __device__ auto convert_layout_acc_Aregs(Layout acc_layout) {
         return make_layout(make_layout(get<0>(l), get<2, 0>(l)), get<1>(l), get<2, 1>(l));
     }
 };
+
+#if 1 // testing
+template<typename MMA_traits, typename Layout>
+__forceinline__ __device__ auto convert_layout_acc_Aregs2(Layout acc_layout) {
+    using X = Underscore;
+    static_assert(decltype(size<0>(acc_layout))::value == 4);
+    static_assert(decltype(rank(acc_layout))::value == 3);
+
+    constexpr int mma_shape_M = get<0>(typename MMA_traits::Shape_MNK{});
+    static_assert(mma_shape_M == 16);
+    constexpr int mma_shape_N = get<1>(typename MMA_traits::Shape_MNK{});
+    static_assert(mma_shape_N == 8);
+
+    constexpr int mma_shape_K = get<2>(typename MMA_traits::Shape_MNK{});
+    static_assert(mma_shape_K == 8 || mma_shape_K == 16);
+    if constexpr (mma_shape_K == 8) {
+        return acc_layout;
+    } else {
+        // meaning mma_shape_k == 16
+        // 参考 layout计算, https://zhuanlan.zhihu.com/p/663093816
+        auto l = logical_divide(acc_layout, Shape<X, X, _4>{});  // (4, MMA_M, (2, MMA_N / 2)))
+        //return make_layout(get<0>(l), make_layout(get<1>(l), get<2, 0>(l)), get<2, 1>(l));
+        return make_layout(get<0>(l), make_layout(_32{}), get<2, 1>(l));
+    }
+};
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
