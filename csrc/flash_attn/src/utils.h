@@ -255,7 +255,7 @@ __forceinline__ __device__ auto convert_layout_acc_Aregs2(Layout acc_layout) {
         // 参考 layout计算, https://zhuanlan.zhihu.com/p/663093816
         auto l = logical_divide(acc_layout, Shape<X, X, _4>{});  // (4, MMA_M, (2, MMA_N / 2)))
         //return make_layout(get<0>(l), make_layout(get<1>(l), get<2, 0>(l)), get<2, 1>(l));
-        return make_layout(get<0>(l), make_layout(_32{}), get<2, 1>(l));
+        return make_layout(get<0>(l), make_layout(_8{}), get<2, 1>(l));
     }
 };
 #endif
