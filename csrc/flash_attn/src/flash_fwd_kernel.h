@@ -195,7 +195,8 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
     Tensor tOrVt2  = thr_mma2.partition_fragment_B(sVtNoSwizzle);                // (MMA, MMA_K,MMA_N)
 
     Tensor acc_o = partition_fragment_C(tiled_mma, Shape<Int<kBlockM>, Int<kHeadDim>>{});  // MMA, MMA_M, MMA_K
-    Tensor acc_o2 = partition_fragment_C(tiled_mma2, Shape<Int<kBlockM>, Int<kHeadDim>>{});  // MMA, MMA_M, MMA_K
+    //Tensor acc_o2 = partition_fragment_C(tiled_mma2, Shape<Int<kBlockM>, Int<kHeadDim>>{});  // MMA, MMA_M, MMA_K
+    Tensor acc_o2 = partition_fragment_C(tiled_mma2, Shape<Int<16>, Int<kHeadDim>>{});  // MMA, MMA_M, MMA_K
 
     if (false && threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
         printf("\n=======TILED_COPY========");
