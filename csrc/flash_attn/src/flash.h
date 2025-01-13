@@ -132,6 +132,8 @@ struct Flash_fwd_params : public Qkv_params {
 
     int num_splits;  // For split-KV version
 
+    int num_heads; //how many heads/sm .
+
     void * __restrict__ alibi_slopes_ptr;
     index_t alibi_slopes_batch_stride;
 
