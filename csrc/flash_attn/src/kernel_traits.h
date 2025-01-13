@@ -47,7 +47,7 @@ struct Flash_kernel_traits {
 
 // If Share_Q_K_smem is true, that forces Is_Q_in_regs to be true
 template<int kHeadDim_, int kBlockM_, int kBlockN_, int kNWarps_, bool Is_Q_in_regs_=false, \
-         bool Share_Q_K_smem_=false, typename elem_type=cutlass::half_t,
+         bool Share_Q_K_smem_=false, typename elem_type=cutlass::half_t, int kHeads_=1, \
          typename Base=Flash_kernel_traits<kHeadDim_, kBlockM_, kBlockN_, kNWarps_, elem_type> >
 struct Flash_fwd_kernel_traits : public Base {
     using Element = typename Base::Element;
@@ -63,6 +63,8 @@ struct Flash_fwd_kernel_traits : public Base {
     // The number of threads.
     static constexpr int kNWarps = kNWarps_;        // 4
     static constexpr int kNThreads = kNWarps * 32;  // 128
+
+    static constexpr int kHeads = kHeads_;       
 
     static constexpr int kBlockM = kBlockM_;        // 64
     static constexpr int kBlockN = kBlockN_;        // 256

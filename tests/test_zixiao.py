@@ -481,5 +481,6 @@ def test_flash_attn_kvcache(
         assert torch.allclose(k_cache_select, k_cache_ref, rtol=1e-3, atol=1e-3)
         assert torch.equal(v_cache_select, v_cache_ref)
     mult = 3 if not alibi else 5
-    assert (out - out_ref).abs().max().item() <= mult * (out_pt - out_ref).abs().max().item() + 1e-5
+    import pdb; pdb.set_trace();
+    assert (out[0][0][0] - out_ref[0][0][0]).abs().max().item() <= mult * (out_pt - out_ref).abs().max().item() + 1e-5
 

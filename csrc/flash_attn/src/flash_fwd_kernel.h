@@ -67,6 +67,9 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
     // The thread index.
     const int tidx = threadIdx.x;
 
+    // warp index
+    int warp_id = threadIdx.x/32;
+
     constexpr int kBlockM = Kernel_traits::kBlockM;   // 64   这两个值在 run_mha_fwd_splitkv_dispatch 编译期间固化
     constexpr int kBlockN = Kernel_traits::kBlockN;   // 256
     constexpr int kHeadDim = Kernel_traits::kHeadDim; // 64
@@ -548,11 +551,15 @@ inline __device__ void compute_attn(const Params &params) {
 template<typename Kernel_traits, bool Is_causal, bool Is_local, bool Has_alibi, bool Is_even_MN, bool Is_even_K, \
         bool Is_softcap, bool Split, bool Append_KV, typename Params>
 inline __device__ void compute_attn_splitkv(const Params &params) {
+    
+    int warp_id = threadIdx.x/32;
+    //bidh += warp_id;
+    
     const int m_block = blockIdx.x;
     // The block index for the batch.
     const int bidb = Split ? blockIdx.z / params.h : blockIdx.y;
     // The block index for the head.
-    const int bidh = Split ? blockIdx.z - bidb * params.h : blockIdx.z;
+    const int bidh = (Split ? blockIdx.z - bidb * params.h : blockIdx.z)*4 + warp_id;
     const int n_split_idx = Split ? blockIdx.y : 0;
     const int num_n_splits = Split ? gridDim.y : 1;
     //gridDim = {x = 1(block数), y = 5(batch), z = 12(head数)}
