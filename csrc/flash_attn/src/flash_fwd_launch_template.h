@@ -117,7 +117,7 @@ void run_flash_splitkv_fwd(Flash_fwd_params &params, cudaStream_t stream) {
     constexpr size_t smem_size = Kernel_traits::kSmemSize;
     // 在decoding阶段, 这个q长度都是1, 因为已经过了prefill(prefill阶段的q会比较长)
     const int num_m_block = (params.seqlen_q/*字数*/ + Kernel_traits::kBlockM/*64*/ - 1) / Kernel_traits::kBlockM;
-    params.num_heads = 2;
+    //params.num_heads = 2;
     dim3 grid(num_m_block, \
                 params.num_splits > 1 ? params.num_splits : params.b, \
                 params.num_splits > 1 ? params.b * params.h : params.h);
@@ -196,7 +196,7 @@ void run_mha_fwd_splitkv_dispatch(Flash_fwd_params &params, cudaStream_t stream)
     // and for headdim 192 with block size 64 x 128.
     // Also for headdim 160 with block size 64 x 128 after the rotary addition.
     constexpr static int kBlockN = Headdim <= 64 ? 256 : (Headdim <= 128 ? 128 : 64);
-    params.num_heads = 2;
+    //params.num_heads = 2;
     run_flash_splitkv_fwd<
                         Flash_fwd_kernel_traits<Headdim, kBlockM, kBlockN, 1 /*4*/, false, false, T>, \
                         Is_causal \
