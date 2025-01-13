@@ -298,8 +298,13 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
         print("\nSoftmax_row_sum: "); print(softmax.row_sum);
     }
 
-    const float alibi_slope = !Has_alibi ? 0.0f : reinterpret_cast<float *>(params.alibi_slopes_ptr)[bidb * params.alibi_slopes_batch_stride + bidh] / params.scale_softmax;
-    flash::Mask<Is_causal, Is_local, Has_alibi> mask(binfo.actual_seqlen_k, binfo.actual_seqlen_q, params.window_size_left, params.window_size_right, alibi_slope);
+    const float alibi_slope = !Has_alibi ? 0.0f : reinterpret_cast<float *>(params.alibi_slopes_ptr)[\
+                bidb * params.alibi_slopes_batch_stride + bidh] / params.scale_softmax;
+    flash::Mask<Is_causal, Is_local, Has_alibi> mask(binfo.actual_seqlen_k, \
+                                                        binfo.actual_seqlen_q, \
+                                                        params.window_size_left, \
+                                                        params.window_size_right, \
+                                                        alibi_slope);
 
     // For performance reason, we separate out two kinds of iterations:
     // those that need masking on S, and those that don't.
