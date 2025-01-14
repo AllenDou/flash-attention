@@ -150,6 +150,7 @@ inline __device__ void compute_attn_1rowblock_splitkv(const Params &params, cons
     // 以上sQ sK sV sVt 都是在shared memory的, 所有默认是带有swizzle的, 
     // 下面的sVtNoSwizzle是sV的转置, 但是没有swizzle, 用来计算softmax
     Tensor sVtNoSwizzle = make_tensor(sV.data().get(), typename Kernel_traits::SmemLayoutVtransposedNoSwizzle{});
+                                            // 可以没有这个 .get()
 
     if (threadIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0) {
         print("\nGlobal & shared memory data: ");
